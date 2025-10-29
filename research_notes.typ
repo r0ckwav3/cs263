@@ -44,16 +44,44 @@ Based on this pipeline, now I'm a bit confused because this looks an awful lot l
 ]
 
 #source("The Swift Runtime - Your Silent Partner")[https://blog.jacobstechtavern.com/p/the-swift-runtime-your-silent-partner]
-The above isn't a very official source, but it does contain some information on what the swift runtime actually does, which is good.
+The above isn't a very official source, but it does contain some information on what the swift runtime actually does, which is good. "The Swift Runtime, a.k.a `libswiftCore`." This pretty immediately dives into SIL, so I might need to come back to it.
+
+#source("A Swift Tour")[https://docs.swift.org/swift-book/documentation/the-swift-programming-language/guidedtour/]
+I figure before I learn SIL I should brush up on swift syntax and type system.
+- Pretty standard typed language. Functions are first class
+- type `String?` allows for `String` values or `nil`
+- closure syntax: `{ number in 3 * number }` or
+    ```
+    { (number: Int) -> Int in return 3 * number}
+    ```
+  or even shorter numbers.sorted `{ $0 > $1 }`
+- inside methods, instance var access can be unqualified or use `self.`
+- init function is named `init`. (also `deinit` exists). multiple inits may share function signatures, but must have different arg names.
+  - #link("https://docs.swift.org/swift-book/documentation/the-swift-programming-language/initialization")[Initialization] has quite a few rules to ensure safety
+- `class Subclass : Superclass{...}`; use `super.whatever`, manually call super.init. must use `override` qualifier for polymorphism.
+- custom getter and setters for "fake" instance var. also `willSet` and `didSet` for code that needs to run around assignment
+- enums can have methods. Use `Type.case` or just `.case` when type is infered
+- structs are passed by value, classes are passed by reference
+- async, await, Task blocks
+- protocols are kinda like rust traits, extensions implement protocols for existing types
+- errors implement Error protocol. functions that may throw an error are marked with throws.
+- `try?` turns errors into optionals. defer plays nice with throw.
+- generics use similar syntax to Rust
+
+#source("SIL Documentation")[https://github.com/swiftlang/swift/blob/main/docs/SIL/SIL.md]
+SIL has three representations:
+- In memory: SIL is represented by data structures which are implemented in the compiler sources. Optimization passes use the in-memory representation of SIL.
+- Textual: The compiler and related utilities can print and parse textual SIL files. Textual SIL files have the file extension `.sil`.
+- Binary: SIL can be stored and read from binary files. Binary SIL files are called "swift-module" files and have the extension `.swiftmodule`. Note that the binary format is not stable. Swift-module files are not compatible between compiler versions.
 
 
 == Next Steps
 This section is a loose collection of "things I want to look at later."
 
 definately look at:
-- finish reading "The Swift Runtime - Your Silent Partner"
 - #link("https://github.com/swiftlang/swift/blob/main/docs/SIL/SIL.md")[SIL docs]
 - memory management
+- "The Swift Runtime - Your Silent Partner"
 - "Advanced control flow with do, guard, defer, and repeat keywords" - About Swift
 - optional types
 - LLVM IR

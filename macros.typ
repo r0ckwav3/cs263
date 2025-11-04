@@ -16,6 +16,7 @@
     let date-text = [#start-date.display() to #end-date.display()]
 
     [
+        #pagebreak()
         #v(1.5em, weak: true)
         #grid(
             columns: (1fr, 1fr),

@@ -16,10 +16,11 @@
 == Vision Statement
 My goal for this project is to investigate the Swift language and runtime, specifically in respect to the language's use in mobile development. My first goal is to re-learn the details of Swift. I've worked with this language before, but I want to re-learn it with an eye towards what we've been learning in class, such as polymorphism and garbage collection. My next goal is to learn about the levels of bytecode that swift compiles into, such as Swift Intermediate Language (SIL) and the LLVM IL. I want to see what, if any, optimizations are made to aid in mobile execution. Finally, I want to investigate swift's cross-platform nature by running a number of benchmarks on different hardware, most likely my macbook, my iphone, and a larger machine such as CSIL.
 
-#week-header(5)
 #remark[
     These notes were made with the #link("https://typst.app/")[typst] typesetting language and the #link("https://github.com/EsotericSquishyy/ergo")[ergo package].
 ]
+
+#week-header(5)
 #source("Swift Compiler | Swift.org")[https://www.swift.org/documentation/swift-compiler/]
 #source("The LLVM Compiler Infrastructure")[https://llvm.org/]
 
@@ -73,6 +74,27 @@ SIL has three representations:
 - In memory: SIL is represented by data structures which are implemented in the compiler sources. Optimization passes use the in-memory representation of SIL.
 - Textual: The compiler and related utilities can print and parse textual SIL files. Textual SIL files have the file extension `.sil`.
 - Binary: SIL can be stored and read from binary files. Binary SIL files are called "swift-module" files and have the extension `.swiftmodule`. Note that the binary format is not stable. Swift-module files are not compatible between compiler versions.
+
+
+#week-header(6)
+
+SIL Documentation Continued:
+- "A `.sil` file is a Swift source file with added SIL definitions."
+- OSSA (Ownership Static Single-Assignment): each variable is assigned once, and ownership is checked to statically find memory leaks or use after free.
+- Raw SIL vs Canonical SIL. Raw SIL may have dataflow errors and isn't optimized yet.
+- SIL types start with `$`, SIL functions start with `@`, SIL values start with `%`
+- SIL converts functions to basic blocks
+  - all basic blocks end with a terminator
+  - basic blocks take arguments
+    - function arguments
+    - forwarded arguments from the previous terminator
+    - "phi arguments" these aprently have something to do with LLVM's phi nodes
+  - in OSSA form, all arguments have ownership annotations
+- Ownership types (also starts with `@`, don't confuse them with functions)
+  - `@owned`: freestanding value is consumed exactly once during the function (by storing or destroying it typically)
+  - `@guaranteed`: value that depends on another value's existance, such as a borrow.
+  - `@unowned`: "A value that is only guaranteed to be instantaneously valid." Must be moved into `@owned` or `@guaranteed` being consumed.
+  - Trivial values (such as int) don't have ownership
 
 
 == Next Steps

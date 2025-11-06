@@ -95,8 +95,32 @@ SIL Documentation Continued:
   - `@guaranteed`: value that depends on another value's existance, such as a borrow.
   - `@unowned`: "A value that is only guaranteed to be instantaneously valid." Must be moved into `@owned` or `@guaranteed` being consumed.
   - Trivial values (such as int) don't have ownership
-
-
+- WOOO LIFETIMES
+  - less complicated than rust lifetimes
+  - owned lifetimes start when an owned value is passed to the block (block or function?) or when an owned value is produced by an instruction
+  - guaranteed lifetimes begin at a borrow, apply, or when a guaranteed value is passed to the function.
+  - a lifetime must end exactly once along every control flow path
+    - the one exception is `@guaranteed` values passed to a function which must survive the entire function
+  - interior uses are any use of a value within its lifetime which is not the start or end
+  - "forward-extended lifetime"
+- borrowing
+  - `%2 = begin_borrow %1` creates a borrow. `%1` must live until `%2` is unborrowed
+  - `load_borrow` is very similar except the argument is an address and we load the memory at that address.
+  - `store_borrow` stores an object on the stack, but has similar lifetime semantics otherwise
+  - `partial_apply` baffles me and might make more sense when I know what apply does
+- phi arguments
+  - A type of argument that a basic block may take. These seem quite similar to forwarded values. I think the difference is that multiple different values may be passed to a phi argument.
+  - E.g. after the end of a loop, we may be coming from either the interior of the loop or the beginning of the loop. the values from these two basic blocks need to be "merged" into one value with one lifetime.
+  - speaking of lifetimes, there are some details about how owned, reborrowed and guaranteed values work
+- A values must dominate instructions that use them. This essentially means that they are defined before they are used. Phi arguments make this a bit more complicated in practice.
+- Joint post-dominance: sorta like lifetimes but for other things. e.g. all `alloc_stack` instructions must be followed by a `dealloc_stack` in every control path. This is called the instructions "scope".
+- linking has a bunch of semantics that I don't quite understand
+- each class has a VTable in the SIL file
+- witness tables? like vtables but different. For protocols, which (as mentioned earlier) are like rust traits
+  - "A witness table is emitted for every declared explicit conformance. Generic types share one generic witness table for all of their instances. Derived classes inherit the witness tables of their base class."
+  - ok I think what that means is for every pair (protocol, class) such that the class "witnesses" the protocol (follows it), there is a table mapping the various methods that the protocol expects onto the actual functions implemented in the class.
+  - each protocol may have a default witness table containing requirements (methods) with "resilient" default implementations. (this has something to do with implmentation order?????? or is this like metaphorical dependance order)
+#pagebreak()
 == Next Steps
 This section is a loose collection of "things I want to look at later."
 

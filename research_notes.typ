@@ -120,14 +120,45 @@ SIL Documentation Continued:
   - "A witness table is emitted for every declared explicit conformance. Generic types share one generic witness table for all of their instances. Derived classes inherit the witness tables of their base class."
   - ok I think what that means is for every pair (protocol, class) such that the class "witnesses" the protocol (follows it), there is a table mapping the various methods that the protocol expects onto the actual functions implemented in the class.
   - each protocol may have a default witness table containing requirements (methods) with "resilient" default implementations. (this has something to do with implmentation order?????? or is this like metaphorical dependance order)
+
+#week-header(7)
+Back on that SIL grind, I should be skimming more
+- global variables exist
+- stack discipline
+  - all stack deallocation functions must indicate the stack allocation function they correspond to
+  - also they must nest properly
+
+Ok that was all a (informative) detour to make sure I understand SIL before continuing to learn about the runtime. Let's get back to that one article that I was looking at earlier.
+
+#source("The Swift Runtime - Your Silent Partner")[https://blog.jacobstechtavern.com/p/the-swift-runtime-your-silent-partner]
+Since this article gives code examples, I want to see if I can follow along in `./tests/silent_partner`.
+```bash
+swiftc -emit-sil -O main.swift > sil.txt
+```
+Just based on what I leared from `SIL.md`, I can somewhat parse the output. We have a `main` function which has a single basic block, and a hidden global `@$s4main10test_classAA9TestClassCvp` which I think is just be our variable `test_class`.
+
+This article starts by drilling down on how `alloc_ref` (which allocates space for an object (on the heap?)) is compiled.
+- `IRGenSILFunction::visitAllocRefInst`
+- `irgen::emitClassAllocation`
+- `IRGenFunction::emitAllocObjectCall`
+- `emitAllocatingCall`
+- `IGM.getAllocObjectFunctionPointer()`
+"When fully compiled into machine code, [`getAllocObjectFunctionPointer`] resolves as a pointer to the runtime ABI memory address of `swift_allocObject`."
+
+ABI is "Application Binary Interface"
+
+The runtime is sort of like a standard library `libswiftCore`, linked to the executable "on launch" (given that swift can be compiled, is it linked at runtime? how does that work?). There is a set of standard memory locations that the swift runtime functions are at.
+
+"On iOS, the object is instantiated with swift_slowAllocTyped to allocate the required heap memory for the object." This seems like the type of stuff I'm looking for. What architectural differences does the runtime need to account for
+
+Objects are reference counted (for garbage collection?).
+
 #pagebreak()
 == Next Steps
 This section is a loose collection of "things I want to look at later."
 
 definately look at:
-- #link("https://github.com/swiftlang/swift/blob/main/docs/SIL/SIL.md")[SIL docs]
 - memory management
-- "The Swift Runtime - Your Silent Partner"
 - "Advanced control flow with do, guard, defer, and repeat keywords" - About Swift
 - optional types
 - LLVM IR

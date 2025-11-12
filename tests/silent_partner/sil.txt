@@ -1,0 +1,94 @@
+sil_stage canonical
+
+import Builtin
+import Swift
+import SwiftShims
+
+class TestClass {
+  @objc deinit
+  init()
+}
+
+@_hasStorage @_hasInitialValue let test_class: TestClass { get }
+
+// test_class
+sil_global hidden [let] @$s4main10test_classAA9TestClassCvp : $TestClass
+
+// main
+// Isolation: unspecified
+sil @main : $@convention(c) (Int32, UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>) -> Int32 {
+[%1: noescape **]
+[global: read,write,copy,allocate,deinit_barrier]
+bb0(%0 : $Int32, %1 : $UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>):
+  alloc_global @$s4main10test_classAA9TestClassCvp // id: %2
+  %3 = global_addr @$s4main10test_classAA9TestClassCvp : $*TestClass // user: %7
+  %4 = alloc_ref $TestClass                       // users: %5, %6
+  debug_value %4, let, name "self", argno 1       // id: %5
+  %6 = end_init_let_ref %4                        // user: %7
+  store %6 to %3                                  // id: %7
+  %8 = integer_literal $Builtin.Int32, 0          // user: %9
+  %9 = struct $Int32 (%8)                         // user: %10
+  return %9                                       // id: %10
+} // end sil function 'main'
+
+// TestClass.__allocating_init()
+// Isolation: unspecified
+sil hidden [exact_self_class] @$s4main9TestClassCACycfC : $@convention(method) (@thick TestClass.Type) -> @owned TestClass {
+[global: allocate]
+// %0 "$metatype"
+bb0(%0 : $@thick TestClass.Type):
+  %1 = alloc_ref $TestClass                       // users: %2, %3
+  debug_value %1, let, name "self", argno 1       // id: %2
+  %3 = end_init_let_ref %1                        // user: %4
+  return %3                                       // id: %4
+} // end sil function '$s4main9TestClassCACycfC'
+
+// TestClass.deinit
+// Isolation: unspecified
+sil hidden @$s4main9TestClassCfd : $@convention(method) (@guaranteed TestClass) -> @owned Builtin.NativeObject {
+[%0: escape => %r, escape c*.v** => %r.c*.v**]
+[global: ]
+// %0 "self"                                      // users: %2, %1
+bb0(%0 : $TestClass):
+  debug_value %0, let, name "self", argno 1       // id: %1
+  %2 = unchecked_ref_cast %0 to $Builtin.NativeObject // user: %3
+  return %2                                       // id: %3
+} // end sil function '$s4main9TestClassCfd'
+
+// TestClass.__deallocating_deinit
+// Isolation: nonisolated
+sil hidden @$s4main9TestClassCfD : $@convention(method) (@owned TestClass) -> () {
+[%0: noescape **, read c*.v**, write c*.v**, copy c*.v**]
+[global: read,write,copy]
+// %0 "self"                                      // users: %3, %2, %1
+bb0(%0 : $TestClass):
+  debug_value %0, let, name "self", argno 1       // id: %1
+  debug_value %0, let, name "self", argno 1       // id: %2
+  dealloc_ref %0                                  // id: %3
+  %4 = tuple ()                                   // user: %5
+  return %4                                       // id: %5
+} // end sil function '$s4main9TestClassCfD'
+
+// TestClass.init()
+// Isolation: unspecified
+sil hidden @$s4main9TestClassCACycfc : $@convention(method) (@owned TestClass) -> @owned TestClass {
+[%0: escape => %r, escape c*.v** => %r.c*.v**]
+[global: ]
+// %0 "self"                                      // users: %2, %1
+bb0(%0 : $TestClass):
+  debug_value %0, let, name "self", argno 1       // id: %1
+  %2 = end_init_let_ref %0                        // user: %3
+  return %2                                       // id: %3
+} // end sil function '$s4main9TestClassCACycfc'
+
+sil_vtable TestClass {
+  #TestClass.init!allocator: (TestClass.Type) -> () -> TestClass : @$s4main9TestClassCACycfC	// TestClass.__allocating_init()
+  #TestClass.deinit!deallocator: @$s4main9TestClassCfD	// TestClass.__deallocating_deinit
+}
+
+
+
+// Mappings from '#fileID' to '#filePath':
+//   'main/main.swift' => 'main.swift'
+
+

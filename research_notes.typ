@@ -153,12 +153,20 @@ The runtime is sort of like a standard library `libswiftCore`, linked to the exe
 
 Objects are reference counted (for garbage collection?).
 
+Memory management notes:
+- `swift/stdlib/public/runtime/HeapObject.cpp` and `Heap.cpp` are the relevant files
+- `swift_allocObject` -> `swift_slowAllocTyped`/`swift_slowAlloc` -> `malloc_type_malloc`/`malloc`
+- `swift_slowDeallocImpl` -> `AlignedFree`/`free`
+- which is all to say that this uses the kernal's malloc implementations (which on `XNU` (most apple products) is a red-black tree)
+
 #pagebreak()
 == Next Steps
 This section is a loose collection of "things I want to look at later."
 
 definately look at:
 - memory management
+- XNU malloc and typed malloc
+- more of this one guy's stuff: https://blog.jacobstechtavern.com/p/what-is-a-crash?open=false#%C2%A7implementation-of-a-runtime-crash)
 - "Advanced control flow with do, guard, defer, and repeat keywords" - About Swift
 - optional types
 - LLVM IR

@@ -166,12 +166,13 @@ This section is a loose collection of "things I want to look at later."
 definately look at:
 - memory management
 - XNU malloc and typed malloc
+- platform differences in here: https://github.com/swiftlang/swift/blob/a43abe6/include/swift/Runtime/Config.h#L135
 - more of this one guy's stuff: https://blog.jacobstechtavern.com/p/what-is-a-crash?open=false#%C2%A7implementation-of-a-runtime-crash)
+
+less important:
 - "Advanced control flow with do, guard, defer, and repeat keywords" - About Swift
 - optional types
 - LLVM IR
 - SIL guaranteed transformations
-
-less important:
 - SIL optimizations
 - LLVM optimizations

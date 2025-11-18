@@ -159,12 +159,40 @@ Memory management notes:
 - `swift_slowDeallocImpl` -> `AlignedFree`/`free`
 - which is all to say that this uses the kernal's malloc implementations (which on `XNU` (most apple products) is a red-black tree)
 
+#week-header(8)
+This has been referenced in the previous material I looked at and we actually just talked about it in class, but I want to get a good source for swift's memory management model.
+
+#source("Automatic Reference Counting")[https://docs.swift.org/swift-book/documentation/the-swift-programming-language/automaticreferencecounting/]
+
+Swift's ARC is a pretty standard reference counting garbage collection system. Unless otherwise specified, all references are strong references. You can, however, manually create weak references or unowned references to break strong reference cycles (which leak memory).
+ - Weak References: a reference that does not contribute to the RC. If the object refered to by a weak reference is deallocated, it is set to `nil` automatically.
+ - Unowned References: an unowned reference is guaranteed to have shorter lifetime than the object it references. It also doesn't contribute to the RC, but it never needs to be set to nil during runtime (since it will never be alive when the object is deallocated).
+ - Unsafe Unowned References: secret third option which doesn't contribute to the RC but has NO runtime checks. It has the least overhead but may point to garbage memory, which can lead to undefined behavior.
+Generally, both of these forms of reference require additional work by the programmer to guarantee that an object is never used after deallocate, but weak references do that work at runtime while unowned references do that work at compile time.
+
+=== Closure reference cycles!!!
+Closures count as a reference to any values which they capture. This can include an object which references the closure, creating a reference cycle. To fix this you can manually specify what a closure captures and then in there annotate certain references as weak or unowned.
+
+#example("Unowned References Test")[
+    I think that unowned references are checked statically (because otherwise what's the difference between them and unsafe unowned references) but the docs weren't super explicit about that, so I want to test it myself. In `tests/reference_counting/unowned.swift` I have a small example with a UserAccount which owns an AdminAccount and then the AdminAccount has an unowned reference back.
+
+    Using some functions, I want to try to force `myuser` out of scope while keeping `myadmin` around. This program compiles and then panics when we try to call `myadmin.user_account.name`.
+
+    Ok so it's not statically checked but instead is still enforced at runtime... If we change it to a weak pointer and force unwrap the variable we get a similar panic. So is `unowned` any faster? my guess is we're still going to all the `unowned` pointers and setting some flag on deallocation. Maybe it's just for programmer convinience? although it saves a single "!" character per reference, so it's not even that much more convienient. If/when I look at the implementation I can confirm these suspicions.
+
+    Last one, what does `unsafe unowned` do in the same code? No panic (as expected) and just reads garbage data (in this case an empty string).
+
+    I've left the version with `unsafe` in the repo since I think it's the most interesting. Also I generated the SIL incase I ever want that.
+]
+
+
 #pagebreak()
 == Next Steps
 This section is a loose collection of "things I want to look at later."
 
 definately look at:
 - memory management
+  - track down the de-allocate implementation?
 - XNU malloc and typed malloc
 - platform differences in here: https://github.com/swiftlang/swift/blob/a43abe6/include/swift/Runtime/Config.h#L135
 - more of this one guy's stuff: https://blog.jacobstechtavern.com/p/what-is-a-crash?open=false#%C2%A7implementation-of-a-runtime-crash)

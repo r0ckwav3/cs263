@@ -1,0 +1,772 @@
+sil_stage canonical
+
+import Builtin
+import Swift
+import SwiftShims
+
+class UserAccount {
+  @_hasStorage final let name: String { get }
+  @_hasStorage @_hasInitialValue var admin_account: AdminAccount? { get set }
+  init(name: String)
+  @objc deinit
+}
+
+class AdminAccount {
+  @_hasStorage unowned final let user_account: @sil_unowned UserAccount { get }
+  @_hasStorage final let permissions: UInt64 { get }
+  init(user_account: UserAccount, permissions: UInt64)
+  @objc deinit
+}
+
+func test() -> AdminAccount
+
+func test2()
+
+// main
+// Isolation: unspecified
+sil @main : $@convention(c) (Int32, UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>) -> Int32 {
+[%1: noescape **]
+[global: read,write,copy,destroy,allocate,deinit_barrier]
+bb0(%0 : $Int32, %1 : $UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>):
+  // function_ref test2()
+  %2 = function_ref @$s7unowned5test2yyF : $@convention(thin) () -> () // user: %3
+  %3 = apply %2() : $@convention(thin) () -> ()
+  %4 = integer_literal $Builtin.Int32, 0          // user: %5
+  %5 = struct $Int32 (%4)                         // user: %6
+  return %5                                       // id: %6
+} // end sil function 'main'
+
+// test2()
+// Isolation: unspecified
+sil hidden @$s7unowned5test2yyF : $@convention(thin) () -> () {
+[global: read,write,copy,destroy,allocate,deinit_barrier]
+bb0:
+  // function_ref test()
+  %0 = function_ref @$s7unowned4testAA12AdminAccountCyF : $@convention(thin) () -> @owned AdminAccount // user: %1
+  %1 = apply %0() : $@convention(thin) () -> @owned AdminAccount // users: %75, %57, %22, %2
+  debug_value %1, let, name "myadmin"             // id: %2
+  %3 = integer_literal $Builtin.Word, 1           // users: %45, %6
+  %4 = integer_literal $Builtin.Int64, 1          // user: %5
+  %5 = struct $Int (%4)                           // user: %10
+  %6 = alloc_ref [tail_elems $Any * %3] $_ContiguousArrayStorage<Any> // users: %14, %7
+  %7 = upcast %6 to $__ContiguousArrayStorageBase // users: %18, %12
+  %8 = integer_literal $Builtin.Int64, 2          // user: %9
+  %9 = struct $UInt (%8)                          // user: %10
+  %10 = struct $_SwiftArrayBodyStorage (%5, %9)   // user: %11
+  %11 = struct $_ArrayBody (%10)                  // users: %48, %13
+  %12 = ref_element_addr %7, #__ContiguousArrayStorageBase.countAndCapacity // user: %13
+  store %11 to %12                                // id: %13
+  %14 = unchecked_ref_cast %6 to $Builtin.BridgeObject // users: %26, %15
+  %15 = struct $_BridgeStorage<__ContiguousArrayStorageBase> (%14) // user: %16
+  %16 = struct $_ArrayBuffer<Any> (%15)           // user: %17
+  %17 = struct $Array<Any> (%16)                  // user: %20
+  %18 = ref_tail_addr %7, $Any                    // user: %19
+  %19 = address_to_pointer %18 to $Builtin.RawPointer // user: %20
+  %20 = mark_dependence %19 on %17                // user: %21
+  %21 = pointer_to_address %20 to [strict] $*Any  // user: %24
+  %22 = ref_element_addr [immutable] %1, #AdminAccount.permissions // user: %23
+  %23 = load %22                                  // user: %25
+  %24 = init_existential_addr %21, $UInt64        // user: %25
+  store %23 to %24                                // id: %25
+  %26 = end_cow_mutation %14                      // users: %44, %27
+  %27 = struct $_BridgeStorage<__ContiguousArrayStorageBase> (%26) // user: %28
+  %28 = struct $_ArrayBuffer<Any> (%27)           // user: %29
+  %29 = struct $Array<Any> (%28)                  // user: %43
+  %30 = integer_literal $Builtin.Int64, 32        // user: %31
+  %31 = struct $UInt64 (%30)                      // user: %34
+  %32 = integer_literal $Builtin.Int64, -2233785415175766016 // user: %33
+  %33 = value_to_bridge_object %32                // users: %39, %34
+  %34 = struct $_StringObject (%31, %33)          // user: %35
+  %35 = struct $_StringGuts (%34)                 // user: %36
+  %36 = struct $String (%35)                      // users: %73, %43
+  %37 = integer_literal $Builtin.Int64, 10        // user: %38
+  %38 = struct $UInt64 (%37)                      // user: %39
+  %39 = struct $_StringObject (%38, %33)          // user: %40
+  %40 = struct $_StringGuts (%39)                 // user: %41
+  %41 = struct $String (%40)                      // users: %73, %43
+  // function_ref print(_:separator:terminator:)
+  %42 = function_ref @$ss5print_9separator10terminatoryypd_S2StF : $@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> () // users: %73, %43
+  %43 = apply %42(%29, %36, %41) : $@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> ()
+  strong_release %26                              // id: %44
+  %45 = alloc_ref [tail_elems $Any * %3] $_ContiguousArrayStorage<Any> // users: %49, %46
+  %46 = upcast %45 to $__ContiguousArrayStorageBase // users: %53, %47
+  %47 = ref_element_addr %46, #__ContiguousArrayStorageBase.countAndCapacity // user: %48
+  store %11 to %47                                // id: %48
+  %49 = unchecked_ref_cast %45 to $Builtin.BridgeObject // users: %69, %50
+  %50 = struct $_BridgeStorage<__ContiguousArrayStorageBase> (%49) // user: %51
+  %51 = struct $_ArrayBuffer<Any> (%50)           // user: %52
+  %52 = struct $Array<Any> (%51)                  // user: %55
+  %53 = ref_tail_addr %46, $Any                   // user: %54
+  %54 = address_to_pointer %53 to $Builtin.RawPointer // user: %55
+  %55 = mark_dependence %54 on %52                // user: %56
+  %56 = pointer_to_address %55 to [strict] $*Any  // user: %67
+  %57 = ref_element_addr [immutable] %1, #AdminAccount.user_account // user: %58
+  %58 = load %57                                  // user: %59
+  %59 = strong_copy_unowned_value %58             // users: %66, %60
+  %60 = ref_element_addr [immutable] %59, #UserAccount.name // user: %61
+  %61 = load %60                                  // users: %62, %68
+  %62 = struct_extract %61, #String._guts         // user: %63
+  %63 = struct_extract %62, #_StringGuts._object  // user: %64
+  %64 = struct_extract %63, #_StringObject._object // user: %65
+  strong_retain %64                               // id: %65
+  strong_release %59                              // id: %66
+  %67 = init_existential_addr %56, $String        // user: %68
+  store %61 to %67                                // id: %68
+  %69 = end_cow_mutation %49                      // users: %74, %70
+  %70 = struct $_BridgeStorage<__ContiguousArrayStorageBase> (%69) // user: %71
+  %71 = struct $_ArrayBuffer<Any> (%70)           // user: %72
+  %72 = struct $Array<Any> (%71)                  // user: %73
+  %73 = apply %42(%72, %36, %41) : $@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> ()
+  strong_release %69                              // id: %74
+  strong_release %1                               // id: %75
+  %76 = tuple ()                                  // user: %77
+  return %76                                      // id: %77
+} // end sil function '$s7unowned5test2yyF'
+
+// UserAccount.name.getter
+// Isolation: unspecified
+sil hidden [transparent] @$s7unowned11UserAccountC4nameSSvg : $@convention(method) (@guaranteed UserAccount) -> @owned String {
+[%0: noescape, escape c*.v** -> %r.v**, read c0.v**, copy c*.v**]
+[global: copy]
+// %0 "self"                                      // users: %2, %1
+bb0(%0 : $UserAccount):
+  debug_value %0, let, name "self", argno 1       // id: %1
+  %2 = ref_element_addr [immutable] %0, #UserAccount.name // user: %3
+  %3 = load %2                                    // users: %4, %8
+  %4 = struct_extract %3, #String._guts           // user: %5
+  %5 = struct_extract %4, #_StringGuts._object    // user: %6
+  %6 = struct_extract %5, #_StringObject._object  // user: %7
+  strong_retain %6                                // id: %7
+  return %3                                       // id: %8
+} // end sil function '$s7unowned11UserAccountC4nameSSvg'
+
+// variable initialization expression of UserAccount.admin_account
+// Isolation: unspecified
+sil hidden [transparent] @$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvpfi : $@convention(thin) () -> @owned Optional<AdminAccount> {
+[global: ]
+bb0:
+  %0 = enum $Optional<AdminAccount>, #Optional.none!enumelt // user: %1
+  return %0                                       // id: %1
+} // end sil function '$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvpfi'
+
+// UserAccount.admin_account.getter
+// Isolation: unspecified
+sil hidden [transparent] @$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvg : $@convention(method) (@guaranteed UserAccount) -> @owned Optional<AdminAccount> {
+[%0: noescape, escape c*.v** -> %r.v**, read c1.v**, copy c*.v**]
+[global: copy]
+// %0 "self"                                      // users: %2, %1
+bb0(%0 : $UserAccount):
+  debug_value %0, let, name "self", argno 1       // id: %1
+  %2 = ref_element_addr %0, #UserAccount.admin_account // user: %3
+  %3 = begin_access [read] [dynamic] [no_nested_conflict] %2 // users: %4, %5
+  %4 = load %3                                    // users: %6, %7
+  end_access %3                                   // id: %5
+  retain_value %4                                 // id: %6
+  return %4                                       // id: %7
+} // end sil function '$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvg'
+
+// UserAccount.admin_account.setter
+// Isolation: unspecified
+sil hidden [transparent] @$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvs : $@convention(method) (@owned Optional<AdminAccount>, @guaranteed UserAccount) -> () {
+[%0: escape v** -> %1.c1.v**, read v**.c*.v**, write v**.c*.v**, copy v**.c*.v**, destroy v**.c*.v**]
+[%1: noescape, noescape c*.v**, read c1.v**, write c1.v**, copy c*.v**, destroy c*.v**]
+[global: read,write,copy,destroy,allocate,deinit_barrier]
+// %0 "value"                                     // users: %7, %2
+// %1 "self"                                      // users: %4, %3
+bb0(%0 : $Optional<AdminAccount>, %1 : $UserAccount):
+  debug_value %0, let, name "value", argno 1      // id: %2
+  debug_value %1, let, name "self", argno 2       // id: %3
+  %4 = ref_element_addr %1, #UserAccount.admin_account // user: %5
+  %5 = begin_access [modify] [dynamic] [no_nested_conflict] %4 // users: %7, %6, %8
+  %6 = load %5                                    // user: %9
+  store %0 to %5                                  // id: %7
+  end_access %5                                   // id: %8
+  release_value %6                                // id: %9
+  %10 = tuple ()                                  // user: %11
+  return %10                                      // id: %11
+} // end sil function '$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvs'
+
+// UserAccount.admin_account.modify
+// Isolation: unspecified
+sil hidden [transparent] @$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvM : $@yield_once @convention(method) (@guaranteed UserAccount) -> @yields @inout Optional<AdminAccount> {
+[%0: noescape, read c*.v**, write c*.v**, copy c*.v**, destroy c*.v**]
+[global: read,write,copy,destroy,allocate,deinit_barrier]
+// %0 "self"                                      // users: %2, %1
+bb0(%0 : $UserAccount):
+  debug_value %0, let, name "self", argno 1       // id: %1
+  %2 = ref_element_addr %0, #UserAccount.admin_account // user: %3
+  %3 = begin_access [modify] [dynamic] %2         // users: %5, %8, %4
+  yield %3, resume bb1, unwind bb2                // id: %4
+
+bb1:                                              // Preds: bb0
+  end_access %3                                   // id: %5
+  %6 = tuple ()                                   // user: %7
+  return %6                                       // id: %7
+
+bb2:                                              // Preds: bb0
+  end_access %3                                   // id: %8
+  unwind                                          // id: %9
+} // end sil function '$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvM'
+
+// UserAccount.__allocating_init(name:)
+// Isolation: unspecified
+sil hidden [exact_self_class] @$s7unowned11UserAccountC4nameACSS_tcfC : $@convention(method) (@owned String, @thick UserAccount.Type) -> @owned UserAccount {
+[%0: escape v** -> %r.c0.v**, escape v**.c*.v** -> %r.c0.v**.c*.v**]
+[global: allocate]
+// %0 "name"                                      // users: %9, %3
+// %1 "$metatype"
+bb0(%0 : $String, %1 : $@thick UserAccount.Type):
+  %2 = alloc_ref $UserAccount                     // users: %8, %5, %4, %10
+  debug_value %0, let, name "name", argno 1       // id: %3
+  debug_value %2, let, name "self", argno 2       // id: %4
+  %5 = ref_element_addr %2, #UserAccount.admin_account // user: %7
+  %6 = enum $Optional<AdminAccount>, #Optional.none!enumelt // users: %13, %7
+  store %6 to %5                                  // id: %7
+  %8 = ref_element_addr %2, #UserAccount.name     // user: %9
+  store %0 to %8                                  // id: %9
+  %10 = end_init_let_ref %2                       // users: %11, %15
+  %11 = ref_element_addr %10, #UserAccount.admin_account // user: %12
+  %12 = begin_access [modify] [dynamic] [no_nested_conflict] %11 // users: %13, %14
+  store %6 to %12                                 // id: %13
+  end_access %12                                  // id: %14
+  return %10                                      // id: %15
+} // end sil function '$s7unowned11UserAccountC4nameACSS_tcfC'
+
+// UserAccount.init(name:)
+// Isolation: unspecified
+sil hidden @$s7unowned11UserAccountC4nameACSS_tcfc : $@convention(method) (@owned String, @owned UserAccount) -> @owned UserAccount {
+[%1: escape => %r, escape c*.v** -> %r.c*.v**, write c*.v**]
+[global: ]
+// %0 "name"                                      // users: %8, %2
+// %1 "self"                                      // users: %7, %4, %9, %3
+bb0(%0 : $String, %1 : $UserAccount):
+  debug_value %0, let, name "name", argno 1       // id: %2
+  debug_value %1, let, name "self", argno 2       // id: %3
+  %4 = ref_element_addr %1, #UserAccount.admin_account // user: %6
+  %5 = enum $Optional<AdminAccount>, #Optional.none!enumelt // users: %12, %6
+  store %5 to %4                                  // id: %6
+  %7 = ref_element_addr %1, #UserAccount.name     // user: %8
+  store %0 to %7                                  // id: %8
+  %9 = end_init_let_ref %1                        // users: %10, %14
+  %10 = ref_element_addr %9, #UserAccount.admin_account // user: %11
+  %11 = begin_access [modify] [dynamic] [no_nested_conflict] %10 // users: %12, %13
+  store %5 to %11                                 // id: %12
+  end_access %11                                  // id: %13
+  return %9                                       // id: %14
+} // end sil function '$s7unowned11UserAccountC4nameACSS_tcfc'
+
+// UserAccount.deinit
+// Isolation: unspecified
+sil hidden @$s7unowned11UserAccountCfd : $@convention(method) (@guaranteed UserAccount) -> @owned Builtin.NativeObject {
+[%0: escape => %r, escape c*.v** => %r.c*.v**, read c*.v**, copy c*.v**, destroy c*.v**]
+[global: read,write,copy,destroy,allocate,deinit_barrier]
+// %0 "self"                                      // users: %11, %8, %2, %1
+bb0(%0 : $UserAccount):
+  debug_value %0, let, name "self", argno 1       // id: %1
+  %2 = ref_element_addr %0, #UserAccount.name     // user: %3
+  %3 = struct_element_addr %2, #String._guts      // user: %4
+  %4 = struct_element_addr %3, #_StringGuts._object // user: %5
+  %5 = struct_element_addr %4, #_StringObject._object // user: %6
+  %6 = load %5                                    // user: %7
+  strong_release %6                               // id: %7
+  %8 = ref_element_addr %0, #UserAccount.admin_account // user: %9
+  %9 = load %8                                    // user: %10
+  release_value %9                                // id: %10
+  %11 = unchecked_ref_cast %0 to $Builtin.NativeObject // user: %12
+  return %11                                      // id: %12
+} // end sil function '$s7unowned11UserAccountCfd'
+
+// UserAccount.__deallocating_deinit
+// Isolation: nonisolated
+sil hidden @$s7unowned11UserAccountCfD : $@convention(method) (@owned UserAccount) -> () {
+[%0: noescape, noescape c*.v**, read c*.v**, write c*.v**, copy c*.v**, destroy c*.v**]
+[global: read,write,copy,destroy,allocate,deinit_barrier]
+// %0 "self"                                      // users: %12, %2, %3, %9, %1
+bb0(%0 : $UserAccount):
+  debug_value %0, let, name "self", argno 1       // id: %1
+  debug_value %0, let, name "self", argno 1       // id: %2
+  %3 = ref_element_addr %0, #UserAccount.name     // user: %4
+  %4 = struct_element_addr %3, #String._guts      // user: %5
+  %5 = struct_element_addr %4, #_StringGuts._object // user: %6
+  %6 = struct_element_addr %5, #_StringObject._object // user: %7
+  %7 = load %6                                    // user: %8
+  strong_release %7                               // id: %8
+  %9 = ref_element_addr %0, #UserAccount.admin_account // user: %10
+  %10 = load %9                                   // user: %11
+  release_value %10                               // id: %11
+  dealloc_ref %0                                  // id: %12
+  %13 = tuple ()                                  // user: %14
+  return %13                                      // id: %14
+} // end sil function '$s7unowned11UserAccountCfD'
+
+// AdminAccount.user_account.getter
+// Isolation: unspecified
+sil hidden [transparent] @$s7unowned12AdminAccountC12user_accountAA04UserC0Cvg : $@convention(method) (@guaranteed AdminAccount) -> @owned UserAccount {
+[%0: noescape, read c0.v**, copy c*.v**]
+[global: read,write,copy,deinit_barrier]
+// %0 "self"                                      // users: %2, %1
+bb0(%0 : $AdminAccount):
+  debug_value %0, let, name "self", argno 1       // id: %1
+  %2 = ref_element_addr [immutable] %0, #AdminAccount.user_account // user: %3
+  %3 = load %2                                    // user: %4
+  %4 = strong_copy_unowned_value %3               // user: %5
+  return %4                                       // id: %5
+} // end sil function '$s7unowned12AdminAccountC12user_accountAA04UserC0Cvg'
+
+// AdminAccount.permissions.getter
+// Isolation: unspecified
+sil hidden [transparent] @$s7unowned12AdminAccountC11permissionss6UInt64Vvg : $@convention(method) (@guaranteed AdminAccount) -> UInt64 {
+[%0: noescape **, read c1.v**]
+[global: ]
+// %0 "self"                                      // users: %2, %1
+bb0(%0 : $AdminAccount):
+  debug_value %0, let, name "self", argno 1       // id: %1
+  %2 = ref_element_addr [immutable] %0, #AdminAccount.permissions // user: %3
+  %3 = load %2                                    // user: %4
+  return %3                                       // id: %4
+} // end sil function '$s7unowned12AdminAccountC11permissionss6UInt64Vvg'
+
+// AdminAccount.__allocating_init(user_account:permissions:)
+// Isolation: unspecified
+sil hidden [exact_self_class] @$s7unowned12AdminAccountC12user_account11permissionsAcA04UserC0C_s6UInt64VtcfC : $@convention(method) (@owned UserAccount, UInt64, @thick AdminAccount.Type) -> @owned AdminAccount {
+[%0: read c*.v**, write c*.v**, copy c*.v**, destroy c*.v**]
+[global: read,write,copy,destroy,allocate,deinit_barrier]
+// %0 "user_account"                              // users: %14, %8, %4
+// %1 "permissions"                               // users: %11, %5
+// %2 "$metatype"
+bb0(%0 : $UserAccount, %1 : $UInt64, %2 : $@thick AdminAccount.Type):
+  %3 = alloc_ref $AdminAccount                    // users: %10, %7, %6, %12
+  debug_value %0, let, name "user_account", argno 1 // id: %4
+  debug_value %1, let, name "permissions", argno 2 // id: %5
+  debug_value %3, let, name "self", argno 3       // id: %6
+  %7 = ref_element_addr %3, #AdminAccount.user_account // user: %9
+  %8 = ref_to_unowned %0 to $@sil_unowned UserAccount // users: %13, %9
+  store %8 to %7                                  // id: %9
+  %10 = ref_element_addr %3, #AdminAccount.permissions // user: %11
+  store %1 to %10                                 // id: %11
+  %12 = end_init_let_ref %3                       // user: %15
+  unowned_retain %8                               // id: %13
+  strong_release %0                               // id: %14
+  return %12                                      // id: %15
+} // end sil function '$s7unowned12AdminAccountC12user_account11permissionsAcA04UserC0C_s6UInt64VtcfC'
+
+// AdminAccount.init(user_account:permissions:)
+// Isolation: unspecified
+sil hidden @$s7unowned12AdminAccountC12user_account11permissionsAcA04UserC0C_s6UInt64Vtcfc : $@convention(method) (@owned UserAccount, UInt64, @owned AdminAccount) -> @owned AdminAccount {
+[%0: read c*.v**, write c*.v**, copy c*.v**, destroy c*.v**]
+[%2: escape => %r, escape c*.v** -> %r.c*.v**, write c*.v**]
+[global: read,write,copy,destroy,allocate,deinit_barrier]
+// %0 "user_account"                              // users: %13, %7, %3
+// %1 "permissions"                               // users: %10, %4
+// %2 "self"                                      // users: %9, %6, %11, %5
+bb0(%0 : $UserAccount, %1 : $UInt64, %2 : $AdminAccount):
+  debug_value %0, let, name "user_account", argno 1 // id: %3
+  debug_value %1, let, name "permissions", argno 2 // id: %4
+  debug_value %2, let, name "self", argno 3       // id: %5
+  %6 = ref_element_addr %2, #AdminAccount.user_account // user: %8
+  %7 = ref_to_unowned %0 to $@sil_unowned UserAccount // users: %12, %8
+  store %7 to %6                                  // id: %8
+  %9 = ref_element_addr %2, #AdminAccount.permissions // user: %10
+  store %1 to %9                                  // id: %10
+  %11 = end_init_let_ref %2                       // user: %14
+  unowned_retain %7                               // id: %12
+  strong_release %0                               // id: %13
+  return %11                                      // id: %14
+} // end sil function '$s7unowned12AdminAccountC12user_account11permissionsAcA04UserC0C_s6UInt64Vtcfc'
+
+// AdminAccount.deinit
+// Isolation: unspecified
+sil hidden @$s7unowned12AdminAccountCfd : $@convention(method) (@guaranteed AdminAccount) -> @owned Builtin.NativeObject {
+[%0: escape => %r, read c0.v**, copy c*.v**, destroy c*.v**]
+[global: read,write,copy,destroy,allocate,deinit_barrier]
+// %0 "self"                                      // users: %5, %2, %1
+bb0(%0 : $AdminAccount):
+  debug_value %0, let, name "self", argno 1       // id: %1
+  %2 = ref_element_addr %0, #AdminAccount.user_account // user: %3
+  %3 = load %2                                    // user: %4
+  unowned_release %3                              // id: %4
+  %5 = unchecked_ref_cast %0 to $Builtin.NativeObject // user: %6
+  return %5                                       // id: %6
+} // end sil function '$s7unowned12AdminAccountCfd'
+
+// AdminAccount.__deallocating_deinit
+// Isolation: nonisolated
+sil hidden @$s7unowned12AdminAccountCfD : $@convention(method) (@owned AdminAccount) -> () {
+[%0: noescape, read c*.v**, write c*.v**, copy c*.v**, destroy c*.v**]
+[global: read,write,copy,destroy,allocate,deinit_barrier]
+// %0 "self"                                      // users: %6, %2, %3, %1
+bb0(%0 : $AdminAccount):
+  debug_value %0, let, name "self", argno 1       // id: %1
+  debug_value %0, let, name "self", argno 1       // id: %2
+  %3 = ref_element_addr %0, #AdminAccount.user_account // user: %4
+  %4 = load %3                                    // user: %5
+  unowned_release %4                              // id: %5
+  dealloc_ref %0                                  // id: %6
+  %7 = tuple ()                                   // user: %8
+  return %7                                       // id: %8
+} // end sil function '$s7unowned12AdminAccountCfD'
+
+// test()
+// Isolation: unspecified
+sil hidden @$s7unowned4testAA12AdminAccountCyF : $@convention(thin) () -> @owned AdminAccount {
+[global: read,write,copy,destroy,allocate,deinit_barrier]
+bb0:
+  %0 = integer_literal $Builtin.Int64, 1          // users: %21, %39
+  %1 = integer_literal $Builtin.Int64, 1852338026 // user: %2
+  %2 = struct $UInt64 (%1)                        // user: %5
+  %3 = integer_literal $Builtin.Int64, -2017612633061982208 // user: %4
+  %4 = value_to_bridge_object %3                  // user: %5
+  %5 = struct $_StringObject (%2, %4)             // user: %6
+  %6 = struct $_StringGuts (%5)                   // user: %7
+  %7 = struct $String (%6)                        // users: %9, %15
+  %8 = alloc_ref $UserAccount                     // users: %14, %11, %10, %16
+  debug_value %7, let, name "name", argno 1       // id: %9
+  debug_value %8, let, name "self", argno 2       // id: %10
+  %11 = ref_element_addr %8, #UserAccount.admin_account // user: %13
+  %12 = enum $Optional<AdminAccount>, #Optional.none!enumelt // users: %19, %13
+  store %12 to %11                                // id: %13
+  %14 = ref_element_addr %8, #UserAccount.name    // user: %15
+  store %7 to %14                                 // id: %15
+  %16 = end_init_let_ref %8                       // users: %111, %34, %23, %27, %17, %20
+  %17 = ref_element_addr %16, #UserAccount.admin_account // user: %18
+  %18 = begin_access [modify] [dynamic] [no_nested_conflict] %17 // users: %35, %36, %19
+  store %12 to %18                                // id: %19
+  debug_value %16, let, name "myuser"             // id: %20
+  %21 = struct $UInt64 (%0)                       // users: %30, %24
+  %22 = alloc_ref $AdminAccount                   // users: %29, %26, %25, %31
+  debug_value %16, let, name "user_account", argno 1 // id: %23
+  debug_value %21, let, name "permissions", argno 2 // id: %24
+  debug_value %22, let, name "self", argno 3      // id: %25
+  %26 = ref_element_addr %22, #AdminAccount.user_account // user: %28
+  %27 = ref_to_unowned %16 to $@sil_unowned UserAccount // users: %77, %28
+  store %27 to %26                                // id: %28
+  %29 = ref_element_addr %22, #AdminAccount.permissions // user: %30
+  store %21 to %29                                // id: %30
+  %31 = end_init_let_ref %22                      // users: %78, %93, %56, %37, %112, %32
+  %32 = enum $Optional<AdminAccount>, #Optional.some!enumelt, %31 // users: %35, %33
+  debug_value %32, let, name "value", argno 1     // id: %33
+  debug_value %16, let, name "self", argno 2      // id: %34
+  store %32 to %18                                // id: %35
+  end_access %18                                  // id: %36
+  debug_value %31, let, name "myadmin"            // id: %37
+  %38 = integer_literal $Builtin.Word, 1          // users: %81, %40
+  %39 = struct $Int (%0)                          // user: %44
+  %40 = alloc_ref [tail_elems $Any * %38] $_ContiguousArrayStorage<Any> // users: %48, %41
+  %41 = upcast %40 to $__ContiguousArrayStorageBase // users: %52, %46
+  %42 = integer_literal $Builtin.Int64, 2         // user: %43
+  %43 = struct $UInt (%42)                        // user: %44
+  %44 = struct $_SwiftArrayBodyStorage (%39, %43) // user: %45
+  %45 = struct $_ArrayBody (%44)                  // users: %84, %47
+  %46 = ref_element_addr %41, #__ContiguousArrayStorageBase.countAndCapacity // user: %47
+  store %45 to %46                                // id: %47
+  %48 = unchecked_ref_cast %40 to $Builtin.BridgeObject // users: %60, %49
+  %49 = struct $_BridgeStorage<__ContiguousArrayStorageBase> (%48) // user: %50
+  %50 = struct $_ArrayBuffer<Any> (%49)           // user: %51
+  %51 = struct $Array<Any> (%50)                  // user: %54
+  %52 = ref_tail_addr %41, $Any                   // user: %53
+  %53 = address_to_pointer %52 to $Builtin.RawPointer // user: %54
+  %54 = mark_dependence %53 on %51                // user: %55
+  %55 = pointer_to_address %54 to [strict] $*Any  // user: %58
+  %56 = ref_element_addr [immutable] %31, #AdminAccount.permissions // user: %57
+  %57 = load %56                                  // user: %59
+  %58 = init_existential_addr %55, $UInt64        // user: %59
+  store %57 to %58                                // id: %59
+  %60 = end_cow_mutation %48                      // users: %80, %61
+  %61 = struct $_BridgeStorage<__ContiguousArrayStorageBase> (%60) // user: %62
+  %62 = struct $_ArrayBuffer<Any> (%61)           // user: %63
+  %63 = struct $Array<Any> (%62)                  // user: %79
+  %64 = integer_literal $Builtin.Int64, 32        // user: %65
+  %65 = struct $UInt64 (%64)                      // user: %68
+  %66 = integer_literal $Builtin.Int64, -2233785415175766016 // user: %67
+  %67 = value_to_bridge_object %66                // users: %73, %68
+  %68 = struct $_StringObject (%65, %67)          // user: %69
+  %69 = struct $_StringGuts (%68)                 // user: %70
+  %70 = struct $String (%69)                      // users: %109, %79
+  %71 = integer_literal $Builtin.Int64, 10        // user: %72
+  %72 = struct $UInt64 (%71)                      // user: %73
+  %73 = struct $_StringObject (%72, %67)          // user: %74
+  %74 = struct $_StringGuts (%73)                 // user: %75
+  %75 = struct $String (%74)                      // users: %109, %79
+  // function_ref print(_:separator:terminator:)
+  %76 = function_ref @$ss5print_9separator10terminatoryypd_S2StF : $@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> () // users: %109, %79
+  unowned_retain %27                              // id: %77
+  strong_retain %31                               // id: %78
+  %79 = apply %76(%63, %70, %75) : $@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> ()
+  strong_release %60                              // id: %80
+  %81 = alloc_ref [tail_elems $Any * %38] $_ContiguousArrayStorage<Any> // users: %85, %82
+  %82 = upcast %81 to $__ContiguousArrayStorageBase // users: %89, %83
+  %83 = ref_element_addr %82, #__ContiguousArrayStorageBase.countAndCapacity // user: %84
+  store %45 to %83                                // id: %84
+  %85 = unchecked_ref_cast %81 to $Builtin.BridgeObject // users: %105, %86
+  %86 = struct $_BridgeStorage<__ContiguousArrayStorageBase> (%85) // user: %87
+  %87 = struct $_ArrayBuffer<Any> (%86)           // user: %88
+  %88 = struct $Array<Any> (%87)                  // user: %91
+  %89 = ref_tail_addr %82, $Any                   // user: %90
+  %90 = address_to_pointer %89 to $Builtin.RawPointer // user: %91
+  %91 = mark_dependence %90 on %88                // user: %92
+  %92 = pointer_to_address %91 to [strict] $*Any  // user: %103
+  %93 = ref_element_addr [immutable] %31, #AdminAccount.user_account // user: %94
+  %94 = load %93                                  // user: %95
+  %95 = strong_copy_unowned_value %94             // users: %102, %96
+  %96 = ref_element_addr [immutable] %95, #UserAccount.name // user: %97
+  %97 = load %96                                  // users: %98, %104
+  %98 = struct_extract %97, #String._guts         // user: %99
+  %99 = struct_extract %98, #_StringGuts._object  // user: %100
+  %100 = struct_extract %99, #_StringObject._object // user: %101
+  strong_retain %100                              // id: %101
+  strong_release %95                              // id: %102
+  %103 = init_existential_addr %92, $String       // user: %104
+  store %97 to %103                               // id: %104
+  %105 = end_cow_mutation %85                     // users: %110, %106
+  %106 = struct $_BridgeStorage<__ContiguousArrayStorageBase> (%105) // user: %107
+  %107 = struct $_ArrayBuffer<Any> (%106)         // user: %108
+  %108 = struct $Array<Any> (%107)                // user: %109
+  %109 = apply %76(%108, %70, %75) : $@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> ()
+  strong_release %105                             // id: %110
+  strong_release %16                              // id: %111
+  return %31                                      // id: %112
+} // end sil function '$s7unowned4testAA12AdminAccountCyF'
+
+// print(_:separator:terminator:)
+// Isolation: unspecified
+sil @$ss5print_9separator10terminatoryypd_S2StF : $@convention(thin) (@guaranteed Array<Any>, @guaranteed String, @guaranteed String) -> ()
+
+// Array._endMutation()
+sil shared [_semantics "array.end_mutation"] [_specialize exported: true, kind: full, available: 14.0, where  @_noMetadata Element : _Class] @$sSa12_endMutationyyF : $@convention(method) <Element> (@inout Array<Element>) -> () {
+[%0: noescape! **, read s0.s0.s0.v**, write v**]
+[global: ]
+// %0                                             // users: %9, %1
+bb0(%0 : $*Array<Element>):
+  %1 = struct_element_addr %0, #Array._buffer     // user: %2
+  %2 = struct_element_addr %1, #_ArrayBuffer._storage // user: %3
+  %3 = struct_element_addr %2, #_BridgeStorage.rawValue // user: %4
+  %4 = load %3                                    // user: %5
+  %5 = end_cow_mutation %4                        // user: %6
+  %6 = struct $_BridgeStorage<__ContiguousArrayStorageBase> (%5) // user: %7
+  %7 = struct $_ArrayBuffer<Element> (%6)         // user: %8
+  %8 = struct $Array<Element> (%7)                // user: %9
+  store %8 to %0                                  // id: %9
+  %10 = tuple ()                                  // user: %11
+  return %10                                      // id: %11
+} // end sil function '$sSa12_endMutationyyF'
+
+// __SwiftNativeNSArrayWithContiguousStorage.__allocating_init()
+sil public_external [exact_self_class] @$ss41__SwiftNativeNSArrayWithContiguousStorageCABycfC : $@convention(method) (@thick __SwiftNativeNSArrayWithContiguousStorage.Type) -> @owned __SwiftNativeNSArrayWithContiguousStorage {
+bb0(%0 : $@thick __SwiftNativeNSArrayWithContiguousStorage.Type):
+  %1 = alloc_ref $__SwiftNativeNSArrayWithContiguousStorage // user: %2
+  %2 = upcast %1 to $__SwiftNativeNSArray         // user: %3
+  %3 = end_init_let_ref %2                        // user: %4
+  %4 = unchecked_ref_cast %3 to $__SwiftNativeNSArrayWithContiguousStorage // user: %5
+  return %4                                       // id: %5
+} // end sil function '$ss41__SwiftNativeNSArrayWithContiguousStorageCABycfC'
+
+// _ContiguousArrayStorage.__allocating_init(_doNotCallMeBase:)
+sil public_external [exact_self_class] @$ss23_ContiguousArrayStorageC16_doNotCallMeBaseAByxGyt_tcfC : $@convention(method) <Element> (@thick _ContiguousArrayStorage<Element>.Type) -> @owned _ContiguousArrayStorage<Element> {
+bb0(%0 : $@thick _ContiguousArrayStorage<Element>.Type):
+  %1 = alloc_ref $_ContiguousArrayStorage<Element> // user: %3
+  // function_ref _ContiguousArrayStorage.init(_doNotCallMeBase:)
+  %2 = function_ref @$ss23_ContiguousArrayStorageC16_doNotCallMeBaseAByxGyt_tcfc : $@convention(method) <τ_0_0> (@owned _ContiguousArrayStorage<τ_0_0>) -> @owned _ContiguousArrayStorage<τ_0_0> // user: %3
+  %3 = apply %2<Element>(%1) : $@convention(method) <τ_0_0> (@owned _ContiguousArrayStorage<τ_0_0>) -> @owned _ContiguousArrayStorage<τ_0_0> // user: %4
+  return %3                                       // id: %4
+} // end sil function '$ss23_ContiguousArrayStorageC16_doNotCallMeBaseAByxGyt_tcfC'
+
+// _ContiguousArrayStorage.canStoreElements(ofDynamicType:)
+sil public_external @$ss23_ContiguousArrayStorageC16canStoreElements13ofDynamicTypeSbypXp_tF : $@convention(method) <Element> (@thick any Any.Type, @guaranteed _ContiguousArrayStorage<Element>) -> Bool {
+[%1: noescape **]
+// %0                                             // user: %2
+bb0(%0 : $@thick any Any.Type, %1 : $_ContiguousArrayStorage<Element>):
+  checked_cast_br any Any.Type in %0 to Element.Type, bb2, bb1 // id: %2
+
+bb1:                                              // Preds: bb0
+  %3 = integer_literal $Builtin.Int1, 0           // user: %4
+  br bb3(%3)                                      // id: %4
+
+bb2(%5 : $@thick Element.Type):                   // Preds: bb0
+  %6 = integer_literal $Builtin.Int1, -1          // user: %7
+  br bb3(%6)                                      // id: %7
+
+// %8                                             // user: %9
+bb3(%8 : $Builtin.Int1):                          // Preds: bb2 bb1
+  %9 = struct $Bool (%8)                          // user: %10
+  return %9                                       // id: %10
+} // end sil function '$ss23_ContiguousArrayStorageC16canStoreElements13ofDynamicTypeSbypXp_tF'
+
+// _ContiguousArrayStorage.staticElementType.getter
+sil public_external @$ss23_ContiguousArrayStorageC17staticElementTypeypXpvg : $@convention(method) <Element> (@guaranteed _ContiguousArrayStorage<Element>) -> @thick any Any.Type {
+[%0: noescape **]
+bb0(%0 : $_ContiguousArrayStorage<Element>):
+  %1 = metatype $@thick Element.Type              // user: %2
+  %2 = init_existential_metatype %1, $@thick any Any.Type // user: %3
+  return %2                                       // id: %3
+} // end sil function '$ss23_ContiguousArrayStorageC17staticElementTypeypXpvg'
+
+// _ContiguousArrayStorage.__deallocating_deinit
+sil public_external @$ss23_ContiguousArrayStorageCfD : $@convention(method) <Element> (@owned _ContiguousArrayStorage<Element>) -> () {
+[%0: noescape, noescape c*.v**]
+// %0                                             // user: %2
+bb0(%0 : $_ContiguousArrayStorage<Element>):
+  // function_ref _ContiguousArrayStorage.deinit
+  %1 = function_ref @$ss23_ContiguousArrayStorageCfd : $@convention(method) <τ_0_0> (@guaranteed _ContiguousArrayStorage<τ_0_0>) -> @owned Builtin.NativeObject // user: %2
+  %2 = apply %1<Element>(%0) : $@convention(method) <τ_0_0> (@guaranteed _ContiguousArrayStorage<τ_0_0>) -> @owned Builtin.NativeObject // user: %3
+  %3 = unchecked_ref_cast %2 to $_ContiguousArrayStorage<Element> // user: %4
+  dealloc_ref %3                                  // id: %4
+  %5 = tuple ()                                   // user: %6
+  return %5                                       // id: %6
+} // end sil function '$ss23_ContiguousArrayStorageCfD'
+
+// __ContiguousArrayStorageBase.__allocating_init(_doNotCallMeBase:)
+sil public_external [exact_self_class] @$ss28__ContiguousArrayStorageBaseC012_doNotCallMeD0AByt_tcfC : $@convention(method) (@thick __ContiguousArrayStorageBase.Type) -> @owned __ContiguousArrayStorageBase {
+bb0(%0 : $@thick __ContiguousArrayStorageBase.Type):
+  unreachable                                     // id: %1
+} // end sil function '$ss28__ContiguousArrayStorageBaseC012_doNotCallMeD0AByt_tcfC'
+
+// __ContiguousArrayStorageBase.canStoreElements(ofDynamicType:)
+sil public_external @$ss28__ContiguousArrayStorageBaseC16canStoreElements13ofDynamicTypeSbypXp_tF : $@convention(method) (@thick any Any.Type, @guaranteed __ContiguousArrayStorageBase) -> Bool {
+[%1: noescape **]
+bb0(%0 : $@thick any Any.Type, %1 : $__ContiguousArrayStorageBase):
+  unreachable                                     // id: %2
+} // end sil function '$ss28__ContiguousArrayStorageBaseC16canStoreElements13ofDynamicTypeSbypXp_tF'
+
+// __ContiguousArrayStorageBase.staticElementType.getter
+sil public_external @$ss28__ContiguousArrayStorageBaseC17staticElementTypeypXpvg : $@convention(method) (@guaranteed __ContiguousArrayStorageBase) -> @thick any Any.Type {
+[%0: noescape **]
+bb0(%0 : $__ContiguousArrayStorageBase):
+  unreachable                                     // id: %1
+} // end sil function '$ss28__ContiguousArrayStorageBaseC17staticElementTypeypXpvg'
+
+// __ContiguousArrayStorageBase.__deallocating_deinit
+sil public_external @$ss28__ContiguousArrayStorageBaseCfD : $@convention(method) (@owned __ContiguousArrayStorageBase) -> () {
+[%0: noescape **]
+// %0                                             // user: %1
+bb0(%0 : $__ContiguousArrayStorageBase):
+  dealloc_ref %0                                  // id: %1
+  %2 = tuple ()                                   // user: %3
+  return %2                                       // id: %3
+} // end sil function '$ss28__ContiguousArrayStorageBaseCfD'
+
+// __SwiftNativeNSArrayWithContiguousStorage.__deallocating_deinit
+sil public_external @$ss41__SwiftNativeNSArrayWithContiguousStorageCfD : $@convention(method) (@owned __SwiftNativeNSArrayWithContiguousStorage) -> () {
+[%0: noescape **]
+// %0                                             // user: %1
+bb0(%0 : $__SwiftNativeNSArrayWithContiguousStorage):
+  dealloc_ref %0                                  // id: %1
+  %2 = tuple ()                                   // user: %3
+  return %2                                       // id: %3
+} // end sil function '$ss41__SwiftNativeNSArrayWithContiguousStorageCfD'
+
+// __SwiftNativeNSArray.__allocating_init()
+sil public_external [exact_self_class] @$ss20__SwiftNativeNSArrayCABycfC : $@convention(method) (@thick __SwiftNativeNSArray.Type) -> @owned __SwiftNativeNSArray {
+bb0(%0 : $@thick __SwiftNativeNSArray.Type):
+  %1 = alloc_ref $__SwiftNativeNSArray            // user: %2
+  %2 = end_init_let_ref %1                        // user: %3
+  return %2                                       // id: %3
+} // end sil function '$ss20__SwiftNativeNSArrayCABycfC'
+
+// __SwiftNativeNSArray.__deallocating_deinit
+sil public_external @$ss20__SwiftNativeNSArrayCfD : $@convention(method) (@owned __SwiftNativeNSArray) -> () {
+[%0: noescape **]
+// %0                                             // user: %1
+bb0(%0 : $__SwiftNativeNSArray):
+  dealloc_ref %0                                  // id: %1
+  %2 = tuple ()                                   // user: %3
+  return %2                                       // id: %3
+} // end sil function '$ss20__SwiftNativeNSArrayCfD'
+
+// _ContiguousArrayStorage.init(_doNotCallMeBase:)
+sil @$ss23_ContiguousArrayStorageC16_doNotCallMeBaseAByxGyt_tcfc : $@convention(method) <τ_0_0> (@owned _ContiguousArrayStorage<τ_0_0>) -> @owned _ContiguousArrayStorage<τ_0_0>
+
+// _ContiguousArrayStorage.deinit
+sil public_external @$ss23_ContiguousArrayStorageCfd : $@convention(method) <Element> (@guaranteed _ContiguousArrayStorage<Element>) -> @owned Builtin.NativeObject {
+[%0: escape => %r, escape c*.v** => %r.c*.v**]
+// %0                                             // users: %14, %13, %3, %2
+bb0(%0 : $_ContiguousArrayStorage<Element>):
+  // function_ref _ContiguousArrayStorage._elementPointer.getter
+  %1 = function_ref @$ss23_ContiguousArrayStorageC15_elementPointerSpyxGvg : $@convention(method) <τ_0_0> (@guaranteed _ContiguousArrayStorage<τ_0_0>) -> UnsafeMutablePointer<τ_0_0> // user: %2
+  %2 = apply %1<Element>(%0) : $@convention(method) <τ_0_0> (@guaranteed _ContiguousArrayStorage<τ_0_0>) -> UnsafeMutablePointer<τ_0_0> // user: %12
+  %3 = upcast %0 to $__ContiguousArrayStorageBase // user: %4
+  %4 = ref_element_addr %3, #__ContiguousArrayStorageBase.countAndCapacity // user: %5
+  %5 = struct_element_addr %4, #_ArrayBody._storage // user: %6
+  %6 = struct_element_addr %5, #_SwiftArrayBodyStorage.count // user: %7
+  %7 = struct_element_addr %6, #Int._value        // user: %8
+  %8 = load %7                                    // user: %9
+  %9 = builtin "assumeNonNegative_Int64"(%8) : $Builtin.Int64 // user: %10
+  %10 = struct $Int (%9)                          // user: %12
+  // function_ref UnsafeMutablePointer.deinitialize(count:)
+  %11 = function_ref @$sSp12deinitialize5countSvSi_tF : $@convention(method) <τ_0_0 where τ_0_0 : ~Copyable> (Int, UnsafeMutablePointer<τ_0_0>) -> UnsafeMutableRawPointer // user: %12
+  %12 = apply %11<Element>(%10, %2) : $@convention(method) <τ_0_0 where τ_0_0 : ~Copyable> (Int, UnsafeMutablePointer<τ_0_0>) -> UnsafeMutableRawPointer
+  fix_lifetime %0                                 // id: %13
+  %14 = unchecked_ref_cast %0 to $Builtin.NativeObject // user: %15
+  return %14                                      // id: %15
+} // end sil function '$ss23_ContiguousArrayStorageCfd'
+
+// _ContiguousArrayStorage._elementPointer.getter
+sil public_external @$ss23_ContiguousArrayStorageC15_elementPointerSpyxGvg : $@convention(method) <Element> (@guaranteed _ContiguousArrayStorage<Element>) -> UnsafeMutablePointer<Element> {
+[%0: noescape, escape c*.v** => %r.s0.v**]
+// %0                                             // user: %1
+bb0(%0 : $_ContiguousArrayStorage<Element>):
+  %1 = ref_tail_addr %0, $Element                 // user: %2
+  %2 = address_to_pointer %1 to $Builtin.RawPointer // user: %3
+  %3 = struct $UnsafeMutablePointer<Element> (%2) // user: %4
+  return %3                                       // id: %4
+} // end sil function '$ss23_ContiguousArrayStorageC15_elementPointerSpyxGvg'
+
+// UnsafeMutablePointer.deinitialize(count:)
+sil public_external @$sSp12deinitialize5countSvSi_tF : $@convention(method) <Pointee where Pointee : ~Copyable> (Int, UnsafeMutablePointer<Pointee>) -> UnsafeMutableRawPointer {
+[%1: escape v** => %r.s0.v**]
+// %0                                             // user: %3
+// %1                                             // user: %2
+bb0(%0 : $Int, %1 : $UnsafeMutablePointer<Pointee>):
+  %2 = struct_extract %1, #UnsafeMutablePointer._rawValue // users: %7, %6
+  %3 = struct_extract %0, #Int._value             // user: %4
+  %4 = builtin "truncOrBitCast_Int64_Word"(%3) : $Builtin.Word // user: %6
+  %5 = metatype $@thin Pointee.Type               // user: %6
+  %6 = builtin "destroyArray"<Pointee>(%5, %2, %4) : $()
+  %7 = struct $UnsafeMutableRawPointer (%2)       // user: %8
+  return %7                                       // id: %8
+} // end sil function '$sSp12deinitialize5countSvSi_tF'
+
+sil_vtable UserAccount {
+  #UserAccount.admin_account!getter: (UserAccount) -> () -> AdminAccount? : @$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvg	// UserAccount.admin_account.getter
+  #UserAccount.admin_account!setter: (UserAccount) -> (AdminAccount?) -> () : @$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvs	// UserAccount.admin_account.setter
+  #UserAccount.admin_account!modify: (UserAccount) -> () -> () : @$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvM	// UserAccount.admin_account.modify
+  #UserAccount.init!allocator: (UserAccount.Type) -> (String) -> UserAccount : @$s7unowned11UserAccountC4nameACSS_tcfC	// UserAccount.__allocating_init(name:)
+  #UserAccount.deinit!deallocator: @$s7unowned11UserAccountCfD	// UserAccount.__deallocating_deinit
+}
+
+sil_vtable AdminAccount {
+  #AdminAccount.init!allocator: (AdminAccount.Type) -> (UserAccount, UInt64) -> AdminAccount : @$s7unowned12AdminAccountC12user_account11permissionsAcA04UserC0C_s6UInt64VtcfC	// AdminAccount.__allocating_init(user_account:permissions:)
+  #AdminAccount.deinit!deallocator: @$s7unowned12AdminAccountCfD	// AdminAccount.__deallocating_deinit
+}
+
+sil_vtable _ContiguousArrayStorage {
+  #__SwiftNativeNSArray.init!allocator: (__SwiftNativeNSArray.Type) -> () -> __SwiftNativeNSArray : @$ss41__SwiftNativeNSArrayWithContiguousStorageCABycfC [inherited]	// __SwiftNativeNSArrayWithContiguousStorage.__allocating_init()
+  #__ContiguousArrayStorageBase.init!allocator: (__ContiguousArrayStorageBase.Type) -> (()) -> __ContiguousArrayStorageBase : @$ss23_ContiguousArrayStorageC16_doNotCallMeBaseAByxGyt_tcfC [override]	// _ContiguousArrayStorage.__allocating_init(_doNotCallMeBase:)
+  #__ContiguousArrayStorageBase.canStoreElements: (__ContiguousArrayStorageBase) -> (any Any.Type) -> Bool : @$ss23_ContiguousArrayStorageC16canStoreElements13ofDynamicTypeSbypXp_tF [override]	// _ContiguousArrayStorage.canStoreElements(ofDynamicType:)
+  #__ContiguousArrayStorageBase.staticElementType!getter: (__ContiguousArrayStorageBase) -> () -> any Any.Type : @$ss23_ContiguousArrayStorageC17staticElementTypeypXpvg [override]	// _ContiguousArrayStorage.staticElementType.getter
+  #_ContiguousArrayStorage.deinit!deallocator: @$ss23_ContiguousArrayStorageCfD	// _ContiguousArrayStorage.__deallocating_deinit
+}
+
+sil_vtable __ContiguousArrayStorageBase {
+  #__SwiftNativeNSArray.init!allocator: (__SwiftNativeNSArray.Type) -> () -> __SwiftNativeNSArray : @$ss41__SwiftNativeNSArrayWithContiguousStorageCABycfC [inherited]	// __SwiftNativeNSArrayWithContiguousStorage.__allocating_init()
+  #__ContiguousArrayStorageBase.init!allocator: (__ContiguousArrayStorageBase.Type) -> (()) -> __ContiguousArrayStorageBase : @$ss28__ContiguousArrayStorageBaseC012_doNotCallMeD0AByt_tcfC	// __ContiguousArrayStorageBase.__allocating_init(_doNotCallMeBase:)
+  #__ContiguousArrayStorageBase.canStoreElements: (__ContiguousArrayStorageBase) -> (any Any.Type) -> Bool : @$ss28__ContiguousArrayStorageBaseC16canStoreElements13ofDynamicTypeSbypXp_tF	// __ContiguousArrayStorageBase.canStoreElements(ofDynamicType:)
+  #__ContiguousArrayStorageBase.staticElementType!getter: (__ContiguousArrayStorageBase) -> () -> any Any.Type : @$ss28__ContiguousArrayStorageBaseC17staticElementTypeypXpvg	// __ContiguousArrayStorageBase.staticElementType.getter
+  #__ContiguousArrayStorageBase.deinit!deallocator: @$ss28__ContiguousArrayStorageBaseCfD	// __ContiguousArrayStorageBase.__deallocating_deinit
+}
+
+sil_vtable __SwiftNativeNSArrayWithContiguousStorage {
+  #__SwiftNativeNSArray.init!allocator: (__SwiftNativeNSArray.Type) -> () -> __SwiftNativeNSArray : @$ss41__SwiftNativeNSArrayWithContiguousStorageCABycfC [override]	// __SwiftNativeNSArrayWithContiguousStorage.__allocating_init()
+  #__SwiftNativeNSArrayWithContiguousStorage.deinit!deallocator: @$ss41__SwiftNativeNSArrayWithContiguousStorageCfD	// __SwiftNativeNSArrayWithContiguousStorage.__deallocating_deinit
+}
+
+sil_vtable __SwiftNativeNSArray {
+  #__SwiftNativeNSArray.init!allocator: (__SwiftNativeNSArray.Type) -> () -> __SwiftNativeNSArray : @$ss20__SwiftNativeNSArrayCABycfC	// __SwiftNativeNSArray.__allocating_init()
+  #__SwiftNativeNSArray.deinit!deallocator: @$ss20__SwiftNativeNSArrayCfD	// __SwiftNativeNSArray.__deallocating_deinit
+}
+
+
+
+// Mappings from '#fileID' to '#filePath':
+//   'unowned/unowned.swift' => 'unowned.swift'
+
+

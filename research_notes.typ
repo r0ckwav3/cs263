@@ -182,7 +182,7 @@ Closures count as a reference to any values which they capture. This can include
 
     Last one, what does `unsafe unowned` do in the same code? No panic (as expected) and just reads garbage data (in this case an empty string).
 
-    I've left the version with `unsafe` in the repo since I think it's the most interesting. Also I generated the SIL incase I ever want that.
+    I've left the version with `unowned` in the repo since I think it's the most interesting. Also I generated the SIL incase I ever want that.
 ]
 
 
@@ -194,7 +194,7 @@ definately look at:
 - memory management
   - track down the de-allocate implementation?
 - XNU malloc and typed malloc
-- platform differences in here: https://github.com/swiftlang/swift/blob/a43abe6/include/swift/Runtime/Config.h#L135
+- platform differences in the runtime (TARGET_OS_IOS)
 - more of this one guy's stuff: https://blog.jacobstechtavern.com/p/what-is-a-crash?open=false#%C2%A7implementation-of-a-runtime-crash)
 
 less important:

@@ -29,7 +29,7 @@ sil @main : $@convention(c) (Int32, UnsafeMutablePointer<Optional<UnsafeMutableP
 [global: read,write,copy,destroy,allocate,deinit_barrier]
 bb0(%0 : $Int32, %1 : $UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>>):
   // function_ref test2()
-  %2 = function_ref @$s7unowned5test2yyF : $@convention(thin) () -> () // user: %3
+  %2 = function_ref @$s3sil5test2yyF : $@convention(thin) () -> () // user: %3
   %3 = apply %2() : $@convention(thin) () -> ()
   %4 = integer_literal $Builtin.Int32, 0          // user: %5
   %5 = struct $Int32 (%4)                         // user: %6
@@ -38,11 +38,11 @@ bb0(%0 : $Int32, %1 : $UnsafeMutablePointer<Optional<UnsafeMutablePointer<Int8>>
 
 // test2()
 // Isolation: unspecified
-sil hidden @$s7unowned5test2yyF : $@convention(thin) () -> () {
+sil hidden @$s3sil5test2yyF : $@convention(thin) () -> () {
 [global: read,write,copy,destroy,allocate,deinit_barrier]
 bb0:
   // function_ref test()
-  %0 = function_ref @$s7unowned4testAA12AdminAccountCyF : $@convention(thin) () -> @owned AdminAccount // user: %1
+  %0 = function_ref @$s3sil4testAA12AdminAccountCyF : $@convention(thin) () -> @owned AdminAccount // user: %1
   %1 = apply %0() : $@convention(thin) () -> @owned AdminAccount // users: %75, %57, %22, %2
   debug_value %1, let, name "myadmin"             // id: %2
   %3 = integer_literal $Builtin.Word, 1           // users: %45, %6
@@ -121,11 +121,11 @@ bb0:
   strong_release %1                               // id: %75
   %76 = tuple ()                                  // user: %77
   return %76                                      // id: %77
-} // end sil function '$s7unowned5test2yyF'
+} // end sil function '$s3sil5test2yyF'
 
 // UserAccount.name.getter
 // Isolation: unspecified
-sil hidden [transparent] @$s7unowned11UserAccountC4nameSSvg : $@convention(method) (@guaranteed UserAccount) -> @owned String {
+sil hidden [transparent] @$s3sil11UserAccountC4nameSSvg : $@convention(method) (@guaranteed UserAccount) -> @owned String {
 [%0: noescape, escape c*.v** -> %r.v**, read c0.v**, copy c*.v**]
 [global: copy]
 // %0 "self"                                      // users: %2, %1
@@ -138,20 +138,20 @@ bb0(%0 : $UserAccount):
   %6 = struct_extract %5, #_StringObject._object  // user: %7
   strong_retain %6                                // id: %7
   return %3                                       // id: %8
-} // end sil function '$s7unowned11UserAccountC4nameSSvg'
+} // end sil function '$s3sil11UserAccountC4nameSSvg'
 
 // variable initialization expression of UserAccount.admin_account
 // Isolation: unspecified
-sil hidden [transparent] @$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvpfi : $@convention(thin) () -> @owned Optional<AdminAccount> {
+sil hidden [transparent] @$s3sil11UserAccountC13admin_accountAA05AdminC0CSgvpfi : $@convention(thin) () -> @owned Optional<AdminAccount> {
 [global: ]
 bb0:
   %0 = enum $Optional<AdminAccount>, #Optional.none!enumelt // user: %1
   return %0                                       // id: %1
-} // end sil function '$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvpfi'
+} // end sil function '$s3sil11UserAccountC13admin_accountAA05AdminC0CSgvpfi'
 
 // UserAccount.admin_account.getter
 // Isolation: unspecified
-sil hidden [transparent] @$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvg : $@convention(method) (@guaranteed UserAccount) -> @owned Optional<AdminAccount> {
+sil hidden [transparent] @$s3sil11UserAccountC13admin_accountAA05AdminC0CSgvg : $@convention(method) (@guaranteed UserAccount) -> @owned Optional<AdminAccount> {
 [%0: noescape, escape c*.v** -> %r.v**, read c1.v**, copy c*.v**]
 [global: copy]
 // %0 "self"                                      // users: %2, %1
@@ -163,11 +163,11 @@ bb0(%0 : $UserAccount):
   end_access %3                                   // id: %5
   retain_value %4                                 // id: %6
   return %4                                       // id: %7
-} // end sil function '$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvg'
+} // end sil function '$s3sil11UserAccountC13admin_accountAA05AdminC0CSgvg'
 
 // UserAccount.admin_account.setter
 // Isolation: unspecified
-sil hidden [transparent] @$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvs : $@convention(method) (@owned Optional<AdminAccount>, @guaranteed UserAccount) -> () {
+sil hidden [transparent] @$s3sil11UserAccountC13admin_accountAA05AdminC0CSgvs : $@convention(method) (@owned Optional<AdminAccount>, @guaranteed UserAccount) -> () {
 [%0: escape v** -> %1.c1.v**, read v**.c*.v**, write v**.c*.v**, copy v**.c*.v**, destroy v**.c*.v**]
 [%1: noescape, noescape c*.v**, read c1.v**, write c1.v**, copy c*.v**, destroy c*.v**]
 [global: read,write,copy,destroy,allocate,deinit_barrier]
@@ -184,11 +184,11 @@ bb0(%0 : $Optional<AdminAccount>, %1 : $UserAccount):
   release_value %6                                // id: %9
   %10 = tuple ()                                  // user: %11
   return %10                                      // id: %11
-} // end sil function '$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvs'
+} // end sil function '$s3sil11UserAccountC13admin_accountAA05AdminC0CSgvs'
 
 // UserAccount.admin_account.modify
 // Isolation: unspecified
-sil hidden [transparent] @$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvM : $@yield_once @convention(method) (@guaranteed UserAccount) -> @yields @inout Optional<AdminAccount> {
+sil hidden [transparent] @$s3sil11UserAccountC13admin_accountAA05AdminC0CSgvM : $@yield_once @convention(method) (@guaranteed UserAccount) -> @yields @inout Optional<AdminAccount> {
 [%0: noescape, read c*.v**, write c*.v**, copy c*.v**, destroy c*.v**]
 [global: read,write,copy,destroy,allocate,deinit_barrier]
 // %0 "self"                                      // users: %2, %1
@@ -206,11 +206,11 @@ bb1:                                              // Preds: bb0
 bb2:                                              // Preds: bb0
   end_access %3                                   // id: %8
   unwind                                          // id: %9
-} // end sil function '$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvM'
+} // end sil function '$s3sil11UserAccountC13admin_accountAA05AdminC0CSgvM'
 
 // UserAccount.__allocating_init(name:)
 // Isolation: unspecified
-sil hidden [exact_self_class] @$s7unowned11UserAccountC4nameACSS_tcfC : $@convention(method) (@owned String, @thick UserAccount.Type) -> @owned UserAccount {
+sil hidden [exact_self_class] @$s3sil11UserAccountC4nameACSS_tcfC : $@convention(method) (@owned String, @thick UserAccount.Type) -> @owned UserAccount {
 [%0: escape v** -> %r.c0.v**, escape v**.c*.v** -> %r.c0.v**.c*.v**]
 [global: allocate]
 // %0 "name"                                      // users: %9, %3
@@ -230,11 +230,11 @@ bb0(%0 : $String, %1 : $@thick UserAccount.Type):
   store %6 to %12                                 // id: %13
   end_access %12                                  // id: %14
   return %10                                      // id: %15
-} // end sil function '$s7unowned11UserAccountC4nameACSS_tcfC'
+} // end sil function '$s3sil11UserAccountC4nameACSS_tcfC'
 
 // UserAccount.init(name:)
 // Isolation: unspecified
-sil hidden @$s7unowned11UserAccountC4nameACSS_tcfc : $@convention(method) (@owned String, @owned UserAccount) -> @owned UserAccount {
+sil hidden @$s3sil11UserAccountC4nameACSS_tcfc : $@convention(method) (@owned String, @owned UserAccount) -> @owned UserAccount {
 [%1: escape => %r, escape c*.v** -> %r.c*.v**, write c*.v**]
 [global: ]
 // %0 "name"                                      // users: %8, %2
@@ -253,11 +253,11 @@ bb0(%0 : $String, %1 : $UserAccount):
   store %5 to %11                                 // id: %12
   end_access %11                                  // id: %13
   return %9                                       // id: %14
-} // end sil function '$s7unowned11UserAccountC4nameACSS_tcfc'
+} // end sil function '$s3sil11UserAccountC4nameACSS_tcfc'
 
 // UserAccount.deinit
 // Isolation: unspecified
-sil hidden @$s7unowned11UserAccountCfd : $@convention(method) (@guaranteed UserAccount) -> @owned Builtin.NativeObject {
+sil hidden @$s3sil11UserAccountCfd : $@convention(method) (@guaranteed UserAccount) -> @owned Builtin.NativeObject {
 [%0: escape => %r, escape c*.v** => %r.c*.v**, read c*.v**, copy c*.v**, destroy c*.v**]
 [global: read,write,copy,destroy,allocate,deinit_barrier]
 // %0 "self"                                      // users: %11, %8, %2, %1
@@ -274,11 +274,11 @@ bb0(%0 : $UserAccount):
   release_value %9                                // id: %10
   %11 = unchecked_ref_cast %0 to $Builtin.NativeObject // user: %12
   return %11                                      // id: %12
-} // end sil function '$s7unowned11UserAccountCfd'
+} // end sil function '$s3sil11UserAccountCfd'
 
 // UserAccount.__deallocating_deinit
 // Isolation: nonisolated
-sil hidden @$s7unowned11UserAccountCfD : $@convention(method) (@owned UserAccount) -> () {
+sil hidden @$s3sil11UserAccountCfD : $@convention(method) (@owned UserAccount) -> () {
 [%0: noescape, noescape c*.v**, read c*.v**, write c*.v**, copy c*.v**, destroy c*.v**]
 [global: read,write,copy,destroy,allocate,deinit_barrier]
 // %0 "self"                                      // users: %12, %2, %3, %9, %1
@@ -297,11 +297,11 @@ bb0(%0 : $UserAccount):
   dealloc_ref %0                                  // id: %12
   %13 = tuple ()                                  // user: %14
   return %13                                      // id: %14
-} // end sil function '$s7unowned11UserAccountCfD'
+} // end sil function '$s3sil11UserAccountCfD'
 
 // AdminAccount.user_account.getter
 // Isolation: unspecified
-sil hidden [transparent] @$s7unowned12AdminAccountC12user_accountAA04UserC0Cvg : $@convention(method) (@guaranteed AdminAccount) -> @owned UserAccount {
+sil hidden [transparent] @$s3sil12AdminAccountC12user_accountAA04UserC0Cvg : $@convention(method) (@guaranteed AdminAccount) -> @owned UserAccount {
 [%0: noescape, read c0.v**, copy c*.v**]
 [global: read,write,copy,deinit_barrier]
 // %0 "self"                                      // users: %2, %1
@@ -311,11 +311,11 @@ bb0(%0 : $AdminAccount):
   %3 = load %2                                    // user: %4
   %4 = strong_copy_unowned_value %3               // user: %5
   return %4                                       // id: %5
-} // end sil function '$s7unowned12AdminAccountC12user_accountAA04UserC0Cvg'
+} // end sil function '$s3sil12AdminAccountC12user_accountAA04UserC0Cvg'
 
 // AdminAccount.permissions.getter
 // Isolation: unspecified
-sil hidden [transparent] @$s7unowned12AdminAccountC11permissionss6UInt64Vvg : $@convention(method) (@guaranteed AdminAccount) -> UInt64 {
+sil hidden [transparent] @$s3sil12AdminAccountC11permissionss6UInt64Vvg : $@convention(method) (@guaranteed AdminAccount) -> UInt64 {
 [%0: noescape **, read c1.v**]
 [global: ]
 // %0 "self"                                      // users: %2, %1
@@ -324,11 +324,11 @@ bb0(%0 : $AdminAccount):
   %2 = ref_element_addr [immutable] %0, #AdminAccount.permissions // user: %3
   %3 = load %2                                    // user: %4
   return %3                                       // id: %4
-} // end sil function '$s7unowned12AdminAccountC11permissionss6UInt64Vvg'
+} // end sil function '$s3sil12AdminAccountC11permissionss6UInt64Vvg'
 
 // AdminAccount.__allocating_init(user_account:permissions:)
 // Isolation: unspecified
-sil hidden [exact_self_class] @$s7unowned12AdminAccountC12user_account11permissionsAcA04UserC0C_s6UInt64VtcfC : $@convention(method) (@owned UserAccount, UInt64, @thick AdminAccount.Type) -> @owned AdminAccount {
+sil hidden [exact_self_class] @$s3sil12AdminAccountC12user_account11permissionsAcA04UserC0C_s6UInt64VtcfC : $@convention(method) (@owned UserAccount, UInt64, @thick AdminAccount.Type) -> @owned AdminAccount {
 [%0: read c*.v**, write c*.v**, copy c*.v**, destroy c*.v**]
 [global: read,write,copy,destroy,allocate,deinit_barrier]
 // %0 "user_account"                              // users: %14, %8, %4
@@ -348,11 +348,11 @@ bb0(%0 : $UserAccount, %1 : $UInt64, %2 : $@thick AdminAccount.Type):
   unowned_retain %8                               // id: %13
   strong_release %0                               // id: %14
   return %12                                      // id: %15
-} // end sil function '$s7unowned12AdminAccountC12user_account11permissionsAcA04UserC0C_s6UInt64VtcfC'
+} // end sil function '$s3sil12AdminAccountC12user_account11permissionsAcA04UserC0C_s6UInt64VtcfC'
 
 // AdminAccount.init(user_account:permissions:)
 // Isolation: unspecified
-sil hidden @$s7unowned12AdminAccountC12user_account11permissionsAcA04UserC0C_s6UInt64Vtcfc : $@convention(method) (@owned UserAccount, UInt64, @owned AdminAccount) -> @owned AdminAccount {
+sil hidden @$s3sil12AdminAccountC12user_account11permissionsAcA04UserC0C_s6UInt64Vtcfc : $@convention(method) (@owned UserAccount, UInt64, @owned AdminAccount) -> @owned AdminAccount {
 [%0: read c*.v**, write c*.v**, copy c*.v**, destroy c*.v**]
 [%2: escape => %r, escape c*.v** -> %r.c*.v**, write c*.v**]
 [global: read,write,copy,destroy,allocate,deinit_barrier]
@@ -372,11 +372,11 @@ bb0(%0 : $UserAccount, %1 : $UInt64, %2 : $AdminAccount):
   unowned_retain %7                               // id: %12
   strong_release %0                               // id: %13
   return %11                                      // id: %14
-} // end sil function '$s7unowned12AdminAccountC12user_account11permissionsAcA04UserC0C_s6UInt64Vtcfc'
+} // end sil function '$s3sil12AdminAccountC12user_account11permissionsAcA04UserC0C_s6UInt64Vtcfc'
 
 // AdminAccount.deinit
 // Isolation: unspecified
-sil hidden @$s7unowned12AdminAccountCfd : $@convention(method) (@guaranteed AdminAccount) -> @owned Builtin.NativeObject {
+sil hidden @$s3sil12AdminAccountCfd : $@convention(method) (@guaranteed AdminAccount) -> @owned Builtin.NativeObject {
 [%0: escape => %r, read c0.v**, copy c*.v**, destroy c*.v**]
 [global: read,write,copy,destroy,allocate,deinit_barrier]
 // %0 "self"                                      // users: %5, %2, %1
@@ -387,11 +387,11 @@ bb0(%0 : $AdminAccount):
   unowned_release %3                              // id: %4
   %5 = unchecked_ref_cast %0 to $Builtin.NativeObject // user: %6
   return %5                                       // id: %6
-} // end sil function '$s7unowned12AdminAccountCfd'
+} // end sil function '$s3sil12AdminAccountCfd'
 
 // AdminAccount.__deallocating_deinit
 // Isolation: nonisolated
-sil hidden @$s7unowned12AdminAccountCfD : $@convention(method) (@owned AdminAccount) -> () {
+sil hidden @$s3sil12AdminAccountCfD : $@convention(method) (@owned AdminAccount) -> () {
 [%0: noescape, read c*.v**, write c*.v**, copy c*.v**, destroy c*.v**]
 [global: read,write,copy,destroy,allocate,deinit_barrier]
 // %0 "self"                                      // users: %6, %2, %3, %1
@@ -404,11 +404,11 @@ bb0(%0 : $AdminAccount):
   dealloc_ref %0                                  // id: %6
   %7 = tuple ()                                   // user: %8
   return %7                                       // id: %8
-} // end sil function '$s7unowned12AdminAccountCfD'
+} // end sil function '$s3sil12AdminAccountCfD'
 
 // test()
 // Isolation: unspecified
-sil hidden @$s7unowned4testAA12AdminAccountCyF : $@convention(thin) () -> @owned AdminAccount {
+sil hidden @$s3sil4testAA12AdminAccountCyF : $@convention(thin) () -> @owned AdminAccount {
 [global: read,write,copy,destroy,allocate,deinit_barrier]
 bb0:
   %0 = integer_literal $Builtin.Int64, 1          // users: %21, %39
@@ -525,7 +525,7 @@ bb0:
   strong_release %105                             // id: %110
   strong_release %16                              // id: %111
   return %31                                      // id: %112
-} // end sil function '$s7unowned4testAA12AdminAccountCyF'
+} // end sil function '$s3sil4testAA12AdminAccountCyF'
 
 // print(_:separator:terminator:)
 // Isolation: unspecified
@@ -726,16 +726,16 @@ bb0(%0 : $Int, %1 : $UnsafeMutablePointer<Pointee>):
 } // end sil function '$sSp12deinitialize5countSvSi_tF'
 
 sil_vtable UserAccount {
-  #UserAccount.admin_account!getter: (UserAccount) -> () -> AdminAccount? : @$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvg	// UserAccount.admin_account.getter
-  #UserAccount.admin_account!setter: (UserAccount) -> (AdminAccount?) -> () : @$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvs	// UserAccount.admin_account.setter
-  #UserAccount.admin_account!modify: (UserAccount) -> () -> () : @$s7unowned11UserAccountC13admin_accountAA05AdminC0CSgvM	// UserAccount.admin_account.modify
-  #UserAccount.init!allocator: (UserAccount.Type) -> (String) -> UserAccount : @$s7unowned11UserAccountC4nameACSS_tcfC	// UserAccount.__allocating_init(name:)
-  #UserAccount.deinit!deallocator: @$s7unowned11UserAccountCfD	// UserAccount.__deallocating_deinit
+  #UserAccount.admin_account!getter: (UserAccount) -> () -> AdminAccount? : @$s3sil11UserAccountC13admin_accountAA05AdminC0CSgvg	// UserAccount.admin_account.getter
+  #UserAccount.admin_account!setter: (UserAccount) -> (AdminAccount?) -> () : @$s3sil11UserAccountC13admin_accountAA05AdminC0CSgvs	// UserAccount.admin_account.setter
+  #UserAccount.admin_account!modify: (UserAccount) -> () -> () : @$s3sil11UserAccountC13admin_accountAA05AdminC0CSgvM	// UserAccount.admin_account.modify
+  #UserAccount.init!allocator: (UserAccount.Type) -> (String) -> UserAccount : @$s3sil11UserAccountC4nameACSS_tcfC	// UserAccount.__allocating_init(name:)
+  #UserAccount.deinit!deallocator: @$s3sil11UserAccountCfD	// UserAccount.__deallocating_deinit
 }
 
 sil_vtable AdminAccount {
-  #AdminAccount.init!allocator: (AdminAccount.Type) -> (UserAccount, UInt64) -> AdminAccount : @$s7unowned12AdminAccountC12user_account11permissionsAcA04UserC0C_s6UInt64VtcfC	// AdminAccount.__allocating_init(user_account:permissions:)
-  #AdminAccount.deinit!deallocator: @$s7unowned12AdminAccountCfD	// AdminAccount.__deallocating_deinit
+  #AdminAccount.init!allocator: (AdminAccount.Type) -> (UserAccount, UInt64) -> AdminAccount : @$s3sil12AdminAccountC12user_account11permissionsAcA04UserC0C_s6UInt64VtcfC	// AdminAccount.__allocating_init(user_account:permissions:)
+  #AdminAccount.deinit!deallocator: @$s3sil12AdminAccountCfD	// AdminAccount.__deallocating_deinit
 }
 
 sil_vtable _ContiguousArrayStorage {
@@ -767,6 +767,6 @@ sil_vtable __SwiftNativeNSArray {
 
 
 // Mappings from '#fileID' to '#filePath':
-//   'unowned/unowned.swift' => 'unowned.swift'
+//   'sil/unowned.swift' => 'unowned.swift'
 
 

@@ -173,7 +173,7 @@ Generally, both of these forms of reference require additional work by the progr
 === Closure reference cycles!!!
 Closures count as a reference to any values which they capture. This can include an object which references the closure, creating a reference cycle. To fix this you can manually specify what a closure captures and then in there annotate certain references as weak or unowned.
 
-#example("Unowned References Test")[
+#example("Unowned References Test", breakable: true)[
     I think that unowned references are checked statically (because otherwise what's the difference between them and unsafe unowned references) but the docs weren't super explicit about that, so I want to test it myself. In `tests/reference_counting/unowned.swift` I have a small example with a UserAccount which owns an AdminAccount and then the AdminAccount has an unowned reference back.
 
     Using some functions, I want to try to force `myuser` out of scope while keeping `myadmin` around. This program compiles and then panics when we try to call `myadmin.user_account.name`.
@@ -185,6 +185,66 @@ Closures count as a reference to any values which they capture. This can include
     I've left the version with `unowned` in the repo since I think it's the most interesting. Also I generated the SIL incase I ever want that.
 ]
 
+=== Goal Setting
+
+Ok, so as of writing it's Nov 20, which means I have like 1.5 weeks until the small presentation, so I want to re-evaluate what I want the primary focus of my project is. Things which I've already looked at which are interesting:
+- The various IRs that swift has
+- the "compiled runtime" thing that swift has going on
+- swift's approach to memory management
+directions I could take this:
+- XNU / IOS / OSX (e.g. the fact that swift links to different mallocs per platform)
+- double down on looking into mobile hardware (accelerators? signal processing? memory constraints?)
+- the efficiency of the various weak pointers that swift has
+
+I personally want to know more about the weak pointers, and also I think it'll be fun to poke around in the swift repo some more.
+
+=== Unowned and Weak References Pt 2
+I generated the SIL for the example I did, so first steps I want to see if there are any SIL instructions that seem relevant to either:
+1. Object deallocation
+2. accessing an unknown pointer
+Notes:
+- field defined here: `@_hasStorage unowned final let user_account: @sil_unowned UserAccount { get }` notably, there are two tags indicating unowned-ness.
+- test2 expands from 3 lines to like 80
+- `%1 = apply %0()` is the entire `test()` function call
+- line 89 is calling printing for the first time
+- printing is so large bruh
+- line 103 gets the addr to the `user_account` field and then 104 loads it
+- by line 106, we're accessing the fields of the `user_account` so it's all loaded by then
+- relevant lines:
+    ```
+    %57 = ref_element_addr [immutable] %1, #AdminAccount.user_account // user: %58
+    %58 = load %57                                  // user: %59
+    %59 = strong_copy_unowned_value %58             // users: %66, %60
+    ```
+- `strong_copy_unowned_value` seems like a good instruction to look at
+
+#source([`strong_copy_unowned_value` documentation])[
+    https://github.com/swiftlang/swift/blob/be5d4b37476799aa8aeba6f749c35af2c2539b96/docs/SIL/Instructions.md?plain=1#L1738
+
+    `%1 = strong_copy_unowned_value %0 : $@unowned T`
+    Asserts that the strong reference count of the heap object referenced by `%0` is still positive, then increments the reference count and returns a new strong reference to `%0`. The intention is that this instruction is used as a "safe ownership conversion" from unowned to strong.
+]
+
+Also looking at the documentation on `load_unowned`, it seems like there are lots of reference counts per object, at minumum a strong reference count (the normal one), a weak reference count, and an unowned reference count. Worryingly, there's no `visitStrongCopyUnownedValue` to translate the instruction into SIL, which means it's getting transformed into something else before lowering. Likely `AddressLowering`.
+
+After a bit more digging, the `AddressLowering` transformation is part of the SIL guaranteed transformations, which are required to occure before sil is considered "canonical". However, the SIL that I've been looking at _is_ canonical, so `AddressLowering` should have already happenened. The command `swiftc -emit-lowered-sil -O -o lowered-sil.txt unowned.swift` seems like it should give me the "most lowered" SIL, but it just errors for some reason.
+
+Also hidden in the SIL `Instructions.md` docs is this useful line "When [the object's] strong and unowned reference counts reach zero, the object's memory is deallocated."
+
+The instuction `strong_copy_weak_value` says that it is "Lowered by AddressLowering to load_weak". So it's likely that `strong_copy_unowned_value` gets lowered to `load_unowned`.
+
+#source([`load_unowned` documentation])[
+    https://github.com/swiftlang/swift/blob/be5d4b37476799aa8aeba6f749c35af2c2539b96/docs/SIL/Instructions.md#load_unowned
+
+    `%1 = load_unowned [take] %0 : $*@sil_unowned T`
+
+    Increments the strong reference count of the object stored at %0.
+
+    Decrements the unowned reference count of the object stored at %0 if [take] is specified. Additionally, the storage is invalidated.
+
+    Requires that the strong reference count of the heap object stored at %0 is positive. Otherwise, traps.
+]
+Looking into the LLVM implementation of `load_unowned`, `unowned_release`, and `strong_release` seem like they would be enlightening.
 
 #pagebreak()
 == Next Steps

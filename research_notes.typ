@@ -220,8 +220,10 @@ Notes:
 
 #source([`strong_copy_unowned_value` documentation])[
     https://github.com/swiftlang/swift/blob/be5d4b37476799aa8aeba6f749c35af2c2539b96/docs/SIL/Instructions.md?plain=1#L1738
-
+]
+#quote("")[
     `%1 = strong_copy_unowned_value %0 : $@unowned T`
+
     Asserts that the strong reference count of the heap object referenced by `%0` is still positive, then increments the reference count and returns a new strong reference to `%0`. The intention is that this instruction is used as a "safe ownership conversion" from unowned to strong.
 ]
 
@@ -235,14 +237,15 @@ The instuction `strong_copy_weak_value` says that it is "Lowered by AddressLower
 
 #source([`load_unowned` documentation])[
     https://github.com/swiftlang/swift/blob/be5d4b37476799aa8aeba6f749c35af2c2539b96/docs/SIL/Instructions.md#load_unowned
-
+]
+#quote("")[
     `%1 = load_unowned [take] %0 : $*@sil_unowned T`
 
-    Increments the strong reference count of the object stored at %0.
+    Increments the strong reference count of the object stored at `%0`.
 
-    Decrements the unowned reference count of the object stored at %0 if [take] is specified. Additionally, the storage is invalidated.
+    Decrements the unowned reference count of the object stored at `%0` if [take] is specified. Additionally, the storage is invalidated.
 
-    Requires that the strong reference count of the heap object stored at %0 is positive. Otherwise, traps.
+    Requires that the strong reference count of the heap object stored at `%0` is positive. Otherwise, traps.
 ]
 Looking into the LLVM implementation of `load_unowned`, `unowned_release`, and `strong_release` seem like they would be enlightening.
 

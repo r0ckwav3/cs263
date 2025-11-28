@@ -280,12 +280,32 @@ print(a.b)
             [`HeapTypeInfo.h: name##LoadStrong`, `GenHeap.cpp: emit##KIND` (inside `DEFINE_BINARY_OPERATION`)],
             [],
             [],
-        [`libswiftCore` ABI Binding],[`swift_allocObject`],[],[],[],
-        [Runtime Notes],[Depending on platform, calls `malloc_type_malloc` or `malloc`],[],[],[],
+        [`libswiftCore` ABI Binding],[`swift_allocObject`],[`swift_unownedLoadStrong`],[],[],
+        [Runtime Notes],[Depending on platform, calls `malloc_type_malloc` or `malloc`],[raw dereference with a `swift_unownedRetainStrong` call],[],[],
     )
 ]
 
 Reading through `swift/lib/IRGen/IRGenSIL.cpp` I found out why I've been having trouble finding `visitStrongCopyUnownedValue` and similar functions. Turns out this file uses a bunch of macros to help define its functions, and so almost anything involving a weak/unowned pointer is hidden in `SOMETIMES_LOADABLE_CHECKED_REF_STORAGE` macro (or `NEVER_...` or `ALWAYS_...`). I'm still going to focus on `load` and `release` since I think those will be the simplest instructions which do what I want.
+
+Ok now that I'm finally in stdlib tracing `_swift_unknownObjectUnownedLoadStrong` I feel close. The call stack goes (for non obj-c objects):
+- `swift_unknownObjectUnownedLoadStrong`
+- `swift_unownedLoadStrong`
+- `swift_unownedRetainStrong`
+- `swift_nonatomic_unownedRetainStrong`
+- `assert(object->refCounts.getUnownedCount())`
+- `object->refCounts.tryIncrementNonAtomic()`
+
+now strong release
+- `swift_release`
+- `swift_nonatomic_release`
+- `object->refCounts.decrementAndMaybeDeinitNonAtomic(1);`
+- `decrementAndMaybeDeinitNonAtomic`
+- `doDecrementNonAtomic`
+- `doDecrementNonAtomicSlow`
+- `_swift_release_dealloc` (if the reference count hits 0)
+- `asFullMetadata(object->metadata)->destroy(object);`
+
+In both of the above cases, the object is a `HeapObject`
 
 #pagebreak()
 == Next Steps

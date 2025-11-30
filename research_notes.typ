@@ -307,6 +307,35 @@ now strong release
 
 In both of the above cases, the object is a `HeapObject`
 
+#week-header(10)
+
+Since the exact topic of my project has changed a bit over the course of the quarter, I think a more apt title is now "On the Implementation and Performance of Swift's Weak References"
+
+Ok time to do the actual benchmarking. I forget how much I've talked about this in the document but the idea is to make and benchmark tests which make a bunch of references of some type to an object.
+
+pointer types:
+- strong (basically a control)
+- weak
+- unowned
+- unsafe unowned
+
+tests:
+- make and then drop N references to an object (create)
+- read a reference to an object N times (deref)
+- make reference and then drop original (destroy)
+
+for create, N = 1,000,000,000 gets around 100 seconds which seems good for amortizing the load. Also I'm running the tests simultaneously too try to remove confounding variables.
+
+Results (seconds):
+#table(
+    columns: 5,
+    [test],[strong],[weak],[unowned],[unsafe unowned],
+    [create], $134.962$, $ 181.800$, $138.643$, $134.682$,
+    [deref], $101.107$, $105.399$, $100.520$, $101.422$,
+    [destroy], $173.022$, $242.510$, $175.566$, $171.259$,
+    [destroy - create], $38.060$, $60.710$, $36.923$, $36.577$
+)
+
 #pagebreak()
 == Next Steps
 This section is a loose collection of "things I want to look at later."

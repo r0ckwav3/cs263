@@ -336,6 +336,59 @@ Results (seconds):
     [destroy - create], $38.060$, $60.710$, $36.923$, $36.577$
 )
 
+(NOTE TO SELF: presentation happened here)
+
+== PDF requirements
+(so that I can find them easily)
+The PDF should include
+ - Link to 10-15 minute video overviewing and demo-ing project (all members must participate; multiple videos (e.g. demo separated out) are fine for turnin)
+ - Link to Google Sheets slides from video/demos
+ - Steps for building/deploying project if you did an implementation
+ - Link to 5 page writeup (PDF) on problem, solution, and findings
+ - Link to GitHub repo (shared with instructor)
+
+post presentation thoughts:
+ - the benchmarks were fine for the presentation itself, but I do want to have more for the final writeup
+ - I can keep looking for the implementation details (I still think unowned release should have good info)
+ - oorrr I can do some manual memory investigation try to see if I can see any difference between:
+   - create object, deallocate it, create a new object
+   - create object, create unowned ref to it, deallocate it, create a new object
+
+I still want to get a straight answer from the code.
+== The HeapObject
+in non-embedded runtimes, a `HeapObject` has two attributes, `HeapMetadata metadata` and `InlineRefCounts refCounts`. `HeapMetadata` is defined in `` and `InlineRefCounts` is defined in `RefCounts.h`. `RefCounts.h` has the good stuff. Let me just quote the first section. There's a bunch of other info in here.
+
+#source([`RefCount.h`])[
+  https://github.com/swiftlang/swift/blob/a437c6d6f6254fcd382243e202f6e60f229ba814/stdlib/public/SwiftShims/swift/shims/RefCount.h
+]
+#quote("")[
+  An object conceptually has three refcounts. These refcounts are stored either "inline" in the field following the isa or in a "side table entry" pointed to by the field following the isa.
+
+  The strong RC counts strong references to the object. When the strong RC reaches zero the object is deinited, unowned reference reads become errors, and weak reference reads become nil. The strong RC is stored as an extra count: when the physical field is 0 the logical value is 1.
+
+  The unowned RC counts unowned references to the object. The unowned RC also has an extra +1 on behalf of the strong references; this +1 is decremented after deinit completes. When the unowned RC reaches zero the object's allocation is freed.
+
+  The weak RC counts weak references to the object. The weak RC also has an extra +1 on behalf of the unowned references; this +1 is decremented after the object's allocation is freed. When the weak RC reaches zero the object's side table entry is freed.
+
+  Objects initially start with no side table. They can gain a side table when:
+  - a weak reference is formed
+  and pending future implementation:
+  - strong RC or unowned RC overflows (inline RCs will be small on 32-bit)
+  - associated object storage is needed on an object
+  - etc
+  Gaining a side table entry is a one-way operation; an object with a side table entry never loses it. This prevents some thread races.
+
+  Strong and unowned variables point at the object. Weak variables point at the object's side table.
+]
+
+Side table entries hold all three reference counts, as well as a pointer to the original object.
+
+So to summarize, there are two objects with three reference counts
+- Strong and unowned references point at the main object, while weak references point to the side table
+- When Strong references reach 0, deinit() is called, dropping any references it has, and the object is marked "deinitialized"
+- After that, when unowned references reach 0, the side table's pointer is set to nil and then the HeapObject is freed.
+- Finally, when weak references reach 0, the side table is freed.
+
 #pagebreak()
 == Next Steps
 This section is a loose collection of "things I want to look at later."

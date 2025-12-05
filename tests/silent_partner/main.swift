@@ -1,2 +1,2 @@
-class TestClass { }
-let test_class = TestClass()
+class A { }
+let obj = A()

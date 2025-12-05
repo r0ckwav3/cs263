@@ -1,0 +1,223 @@
+#import "@preview/cetz:0.4.2"
+
+#set page(
+  "us-letter",
+  margin: 1in,
+  header: context {
+    if counter(page).get().first() > 1 {
+      grid(columns: (80%, 20%),
+        align: (left, right),
+        [_On the Implementation and Performance of Swift's Weak References_], [Wren Vandervelde]
+      )
+    }
+  }
+)
+
+#set heading(numbering: "1.1")
+#show figure.caption: emph
+#show figure: it => {
+  let spacing = 1em
+
+  if it.placement == none {
+    block(it, inset: (y: spacing))
+  } else {
+    place(
+      it.placement,
+      float: true,
+      clearance: spacing,
+      block(align(center, it), spacing: spacing, width: 100%),
+    )
+  }
+}
+
+// TODO: make this title look good
+On the Implementation and Performance of Swift's Weak References
+Wren Vandervelde
+
+= Abstract
+#lorem(20)
+
+= The Swift Language
+Swift is a high-level language originally developed by Apple and then open-sourced in 2015#footnote[https://www.swift.org/about/]. Swift advertises itself as a general purpose language, although one of its most notable uses is in application development for Apple's primary platforms -- iOS, macOS, watchOS, and tvOS. In contrast to its predecessor Objective-C, one of Swift's stated goals is safety, and one way that this goal is implemented practically is that Swift has automatic memory management in the form of a reference-counting garbage collector.
+
+== Compiling Swift
+To understand how swift's memory management works, we first need to understand the nature of Swift's compilation flow and runtime. The first step of this workflow is parsing and semantic analysis#footnote[https://www.swift.org/documentation/swift-compiler/]. Swift is a strongly typed language with modern type inference, so these two steps parse the high-level swift code and propate type information through the AST. Also in this step is the Clang importer, which semantically links clang modules to the code so that they can be part of the type inference and verification.
+
+The next step of compilation is SIL generation. Swift Intermediate Language (SIL), as the name suggests, acts as an intermediary step between high-level swift code and the lower compilation steps. Much like Java bytecode, SIL looks much more like assembly code, with each line (of code) containing an opcode with arguments#footnote[https://github.com/swiftlang/swift/blob/main/docs/SIL/SIL.md]. For control flow within functions, SIL uses basic blocks, each of which have their own local variables, arguments and forwarded values for the next basic block. Despite the aparent simplicity of the instructions, it is just as strongly typed than swift, and automatically generates additional verification information such as object lifetimes and ownership information. SIL is also a Static Single Assignment (SSA) language, meaning that each variable is assigned exactly once. At this step of the process, a number of transformations and optimizations are also applied. Relevant to this project, there are actually a number of optimizations focused on reference counting. For the sake of simplicity, I will not be considering these, but they may be worth investegating in the future.
+
+// TODO: do I include an example of SIL here? it's pretty cool to look at the basic blocks at least
+
+Finally, the SIL is lowered to LLVM IR, yet another intermeidate representation, which can then be compiled to a native executable by LLVM.
+
+// TODO: some difference between the two
+
+== The Swift Runtime
+
+Astute readers may notice that at the end of the compilation process, we end up with an executable binary. So why do we need a runtime? And how does the runtime [[attach to]] the program during execution?
+
+What we refer to as the Swift runtime is a section of the Swift standard library which is dynamically linked to the executable at runtime#footnote[https://www.swift.org/documentation/standard-library/]. For example, lets see what creating an object looks like.
+
+#figure(
+  text(size: 8pt)[
+    #grid(
+      columns: 2,
+      align: left,
+      inset: 1em,
+      stroke: none,
+      [Source Code],
+      ```swift
+class A { }
+let obj = A()
+      ```,
+      grid.hline(),
+      [SIL],
+      ```
+[...]
+alloc_global @$s3sil3objAA1ACvp
+%3 = global_addr @$s3sil3objAA1ACvp : $*A
+%4 = alloc_ref $A
+debug_value %4, let, name "self", argno 1
+%6 = end_init_let_ref %4
+store %6 to %3
+[...]
+      ```,
+      grid.hline(),
+      [LLVM IR],
+      ```
+[...]
+%4 = call noalias ptr @swift_allocObject(ptr %3, i64 16, i64 7) #2
+store ptr %4, ptr @"$s18llvmir_unoptimized3objAA1ACvp", align 8
+[...]
+      ```
+    )
+  ],
+  caption: [Compilation steps of allocation ],
+) <compilation_steps>
+
+We start with some of the simplest swift code that will allocate an object on the heap. In @compilation_steps we create a class `A` and instantiate an object `obj`, which will be heap-allocated. [[WE DO SIL GENERATION]] and end up with nearly one hundred lines of SIL. A bunch of these lines are autogenerated code for our class $A$. We find two autogenerated `init` functions and two autogenerated `deinit` functions which are [[implied]] by our empty class definition. The function we're interested in is the `main()` function, which contains the expanded version of the line `let obj = A()`. Due to SIL being SSA, all of our variables have been renamed, but we can see where they went. For example, note that `@$s3sil3objAA1ACvp` corresponds to our global variable `obj`. The two most important lines in this code are `alloc_ref` and `end_init_let_ref`, which is where we are allocating space for the object on the heap and declaring the object initialized respectively. Since memory is managed by the runtime, we know that this `alloc_ref` instruction must eventually talk to the runtime.
+
+
+Luckily in the SIL to LLVM IR translation, we get to keep most of the variable names, so finding the equivalent to `alloc_ref` is comparatively simple. I've cut off the allocation of the global variable since it's not what we're interested in, but even still, the latter four lines of SIR are lowered to only two lines of LLVM IR. The first line is what `alloc_ref` is translated into, and it's the runtime hook we're looking for. Specifically, `alloc_ref` is translated to a function call to `@swift_allocObject`, a function defined in the runtime portion of the standard library.
+
+The rest of the Swift runtime is implemented similarly. Memory operations in swift are translated to memory management instructions in SIL which are then lowered to into runtime function calls.
+
+= Solving Reference Cycles
+As mentioned earlier, the Swift runtime manages memory via a reference counting garbage collector. [[upside]], reference counting has the pretty serious tradeoff that it cannot detect reference cycles. Consider a doubly linked list defined in @dll_code using the default "strong" references provided in swift. At the end of this code block, neither `Listnode` object is reachable from our roots (`a` and `b`), but both have a nonzero reference count because they point to each other.
+
+#figure(
+  ```swift
+  class ListNode{
+    var val: String
+    init(val: String) { self.val = val }
+    var next: ListNode?
+    var prev: ListNode?
+  }
+  var a: ListNode? = ListNode("a")
+  var b: ListNode?  = ListNode("b")
+  a!.next = b
+  b!.prev = a
+  a = nil
+  b = nil
+  ```,
+  caption: [A doubly linked list]
+)<dll_code>
+
+#figure(
+  cetz.canvas(
+    length: 0.75cm, {
+    import cetz.draw: *
+
+    rect((0,2.6),(4,3.6), fill: gray, name: "header_a")
+    rect((0,0),(4,2.6), name: "body_a")
+    content("header_a.center", `ListNode (rc=2)`)
+    content("body_a.north", `val: "a"`, anchor:"north", padding:(top:0.4, rest:0.2), name: "attr1_a")
+    content("attr1_a.south", `prev: nil`, anchor:"north", padding:0.2, name: "attr2_a")
+    content("attr2_a.south", `next: ptr`, anchor:"north", padding:0.2, name: "attr3_a")
+
+    rect((8,2.6),(12,3.6), fill: gray, name: "header_b")
+    rect((8,0),(12,2.6), name: "body_b")
+    content("header_b.center", `ListNode (rc=2)`)
+    content("body_b.north", `val: "a"`, anchor:"north", padding:(top:0.4, rest:0.2), name: "attr1_b")
+    content("attr1_b.south", `prev: ptr`, anchor:"north", padding:0.2, name: "attr2_b")
+    content("attr2_b.south", `next: nil`, anchor:"north", padding:0.2, name: "attr3_b")
+
+    content((2,5), `var a`, padding:0.2, name: "var_a")
+    content((10,5), `var b`, padding:0.2, name: "var_b")
+
+    set-style(mark: (start: none, end: ">"))
+    line("var_a", "header_a")
+    line("var_b", "header_b")
+    line("attr3_a", "header_b.west")
+    line("attr2_b", "header_a.east")
+  }),
+  caption: [A strong reference cycle]
+)<dll_strong_cycle>
+
+The way that swift solves this is by introducing a number of "weak" pointers--as opposed to the normal "strong" pointers#footnote("https://docs.swift.org/swift-book/documentation/the-swift-programming-language/automaticreferencecounting/"). The three kinds of weak pointers in swift are weak pointers, unowned pointers, and unsafe unowned pointers, which I will refer to as simply "unowned pointers". All three of these can point to an object without increasing its reference count. What this also means is that all of these weak pointer types may end up pointing to an object whose reference count has reached 0 and therefore has been deinitialized. How the three weak pointer types handle that case is their main distinguishing feature:
+- Weak pointers must be optional types and, when the referenced object is deinitialized, are automatically set to `nil`.
+- Unowned pointers panic when a user tries to reference them after deallocation
+- Unsafe pointers don't have any checks, and may allow the user to make use-after-free errors
+
+Unsafe pointers, like the name suggests, violate the memory safety of swift and are therefore highly discouraged. When choosing between the other two options, swift suggests using the concept of ownership and lifetimes. If there are two (or more) objects which may cause a reference cycle, one of them should be designated as the "owner" of the other object and is typically the object with the longer lifetime -- the one which is created first and used last. If the owned object has a stictly shorter lifetime than the owner, then it should have a unowned reference, since there's no risk of panicking. On the other hand, if the owned object might live longer than the owner, weak references should be used.
+
+For example, in our linked list we typically keep a pointer to the head, so we should make the `next` reference be strong. However, we may want to pop the head of the list and then keep around everything else, so the `prev` pointer should be weak. In @dll_code_weak we have the updated class definition, which leads to the references in @dll_weak_cycle.
+
+#figure(
+  ```swift
+  class ListNode{
+    var val: String
+    init(val: String) { self.val = val }
+    var next: ListNode?
+    weak var prev: ListNode?
+  }
+  ```,
+  caption: [An updated doubly linked list]
+)<dll_code_weak>
+
+#figure(
+  cetz.canvas(
+    length: 0.75cm, {
+    import cetz.draw: *
+
+    rect((0,2.6),(4,3.6), fill: gray, name: "header_a")
+    rect((0,0),(4,2.6), name: "body_a")
+    content("header_a.center", `ListNode (rc=1)`)
+    content("body_a.north", `val: "a"`, anchor:"north", padding:(top:0.4, rest:0.2), name: "attr1_a")
+    content("attr1_a.south", `prev: nil`, anchor:"north", padding:0.2, name: "attr2_a")
+    content("attr2_a.south", `next: ptr`, anchor:"north", padding:0.2, name: "attr3_a")
+
+    rect((8,2.6),(12,3.6), fill: gray, name: "header_b")
+    rect((8,0),(12,2.6), name: "body_b")
+    content("header_b.center", `ListNode (rc=2)`)
+    content("body_b.north", `val: "a"`, anchor:"north", padding:(top:0.4, rest:0.2), name: "attr1_b")
+    content("attr1_b.south", `prev: ptr(weak)`, anchor:"north", padding:0.2, name: "attr2_b")
+    content("attr2_b.south", `next: nil`, anchor:"north", padding:0.2, name: "attr3_b")
+
+    content((2,5), `var a`, padding:0.2, name: "var_a")
+    content((10,5), `var b`, padding:0.2, name: "var_b")
+
+    set-style(mark: (start: none, end: ">"))
+    line("var_a", "header_a")
+    line("var_b", "header_b")
+    line("attr3_a", "header_b.west")
+    line("attr2_b", "header_a.east", stroke: (dash: "dashed"))
+  }),
+  caption: [Solving the reference cycle with weak pointers]
+)<dll_weak_cycle>
+
+Once `a` and `b` are unassigned, object B will drop down to 1 reference (from object A next), but object A now has a reference count of 0 since the weak reference from object B doesn't contribute to the count. This leads to object A being deinitialized, removing the reference to object B. This in turn brings B's reference count down to 0, so both objects are correctly deinitialized and deallocated.
+
+== Implementation
+Now that we understand how weak pointers work, we can start to understand how they're implemented. Reference counting with only strong references creates a straightforward and elegant system. Each object has one reference count stored as metadata and is deinitialized exactly when its reference count drops to zero. A reference counted runtime system with weak pointers cannot be as simple. For instance, when an unowned pointer tries to access an object with no more strong references, it needs to panic. How does it "know" that the object has been deinitialized? Presumably there's a flag somewhere, but now that's extra state that we didn't need to store previously. And now _that_ state needs to be deallocated somehow when there are no more
+
+= Performance
+#lorem(20)
+
+= Process
+#lorem(20)
+
+= Future Work
+#lorem(20)
+
+= Acknowlegements
+// TODO: tech tavern here

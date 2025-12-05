@@ -389,6 +389,54 @@ So to summarize, there are two objects with three reference counts
 - After that, when unowned references reach 0, the side table's pointer is set to nil and then the HeapObject is freed.
 - Finally, when weak references reach 0, the side table is freed.
 
+Now that I have an actual answer to my research question, I think I'll start writing the writeup and then figure out what future research I need to do from there. My general outline is:
+ 1. Abstract
+   - As usual I'm planning to write this pretty much last, as it should summarize my results and thoughts
+ 2. The Swift Runtime
+   - Introduce swift as a language with stuff like history, common use cases, and stated goals
+   - What is the swift tech stack, and where does the library hook in (might need to cite Jacob's Tech Tavern, but I want to avoid if possible)
+   - reference counting user-facing API
+ 3. Implementation Details
+   - some more stuff about alloc?
+   - The HeapObject type
+   - Expand on the info in RefCounts.h
+   - Worked example of when the heap object/side table are allocated/freed
+ 4. Performance Implications
+   - What we expect to see from each pointer's performance, enumerate all the overhead on each pointer's create/deref/destroy/deallocate.
+   - What we actually see from the benchmarks (can i get a memory benchmark)
+ 5. Process
+   - the first of the more meta sections, this should be a description of what I was doing week-to-week and how my goals changed over the course of the project. I feel like I have a tendancy to cut sections like these short, so I want to be careful to be specific about this.
+   - the end of this section can have an "accomplishments" section basically saying what achievements I think were the most important in this project. Especially on the researchs side where there aren't any specific artifacts.
+   - I can also include challenges in here
+ 6. Future Work
+   - What would I want to look into going forward, what I would have done differently?
+   - one big one is that weak and unowned are essentially two squares in a grid of "what does it point at" and "what happens when you try to dereference it" which are pretty independant levers. So what do the other combos look like?
+   - variations on the side table, can you allocate the header + object in one go but then ony deallocate the object when all strong pointers dissapear?
+   - how do other languages do this? Rust Arcs and Rcs? C++ smart pointers
+   - SIL ARC optimization
+
+Also I found a more official source about what the runtime is:
+#source([Standard Library | Swift.org])[https://www.swift.org/documentation/standard-library/]
+
+Ok I want to get an LLVM IR and SIL for the really basic allocations. These are both for the code in `silent_partner`.
+```
+swiftc -emit-irgen -O main.swift -o llvmir_unoptimized.txt
+swiftc -emit-ir -O main.swift -o llvmir.txt
+```
+here's main from the unoptimized version (its pretty similar in both).
+```
+define i32 @main(i32 %0, ptr %1) #0 {
+entry:
+  %2 = call swiftcc %swift.metadata_response @"$s18llvmir_unoptimized9TestClassCMa"(i64 0) #3
+  %3 = extractvalue %swift.metadata_response %2, 0
+  %4 = call noalias ptr @swift_allocObject(ptr %3, i64 16, i64 7) #2
+  store ptr %4, ptr @"$s18llvmir_unoptimized10test_classAA9TestClassCvp", align 8
+  ret i32 0
+}
+```
+
+question for me: do unsafe pointer contribute to the unowned reference count
+
 #pagebreak()
 == Next Steps
 This section is a loose collection of "things I want to look at later."

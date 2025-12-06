@@ -1,0 +1,288 @@
+OVERVIEW: Swift compiler
+
+USAGE: swift
+
+OPTIONS:
+  -access-notes-path <value>
+                          Specify YAML file to override attributes on Swift declarations in this module
+  -allow-availability-platforms <platforms>
+                          Restrict availability metadata to the given platforms, e.g. 'macOS,Swift'
+  -allow-non-resilient-access
+                          Ensures all contents are generated besides exportable decls in the binary module, so non-resilient access can be allowed
+  -allowable-client <vers>
+                          Module names that are allowed to import this module
+  -assert-config <value>  Specify the assert_configuration replacement. Possible values are Debug, Release, Unchecked, DisableReplacement.
+  -block-availability-platforms <platforms>
+                          Remove the given platforms from symbol graph availability metadata, e.g. 'macOS,Swift'
+  -build-id <build-id>    Specify the build ID argument passed to the linker
+  -cache-compile-job      Enable compiler caching
+  -cache-disable-replay   Skip loading the compilation result from cache
+  -cas-path <path>        Path to CAS
+  -cas-plugin-option <name>=<option>
+                          Option pass to CAS Plugin
+  -cas-plugin-path <path> Path to CAS Plugin
+  -clang-build-session-file <value>
+                          Use the last modification time of <file> as the underlying Clang build session timestamp
+  -clang-scanner-module-cache-path <value>
+                          Specifies the Clang dependency scanner module cache path
+  -clang-target-variant <value>
+                          Separately set the target we should use for internal Clang instance for the 'zippered' code for macCatalyst
+  -clang-target <value>   Separately set the target we should use for internal Clang instance
+  -color-diagnostics      Print diagnostics in color
+  -compiler-assertions    Enable internal self-checks while compiling
+  -continue-building-after-errors
+                          Continue building, even after errors are encountered
+  -coverage-prefix-map <prefix=replacement>
+                          Remap source paths in coverage info
+  -cxx-interoperability-mode=<value>
+                          Enables C++ interoperability; pass 'default' to enable or 'off' to disable
+  -debug-info-format=<value>
+                          Specify the debug info format type to either 'dwarf' or 'codeview'
+  -debug-info-store-invocation
+                          Emit the compiler invocation in the debug info.
+  -debug-prefix-map <prefix=replacement>
+                          Remap source paths in debug info
+  -default-isolation MainActor|nonisolated
+                          Specify the default actor isolation: MainActor or nonisolated. Defaults to nonisolated.
+  -diagnostic-style <style>
+                          The formatting style used when printing diagnostics ('swift' or 'llvm')
+  -disable-actor-data-race-checks
+                          Disable runtime checks for actor data races
+  -disable-autolinking-runtime-compatibility-concurrency
+                          Do not use autolinking for the concurrency runtime compatibility library
+  -disable-autolinking-runtime-compatibility-dynamic-replacements
+                          Do not use autolinking for the dynamic replacement runtime compatibility library
+  -disable-autolinking-runtime-compatibility
+                          Do not use autolinking for runtime compatibility libraries
+  -disable-clang-target   Disable a separately specified target triple for Clang instance to use
+  -disable-dynamic-actor-isolation
+                          Disable dynamic actor isolation checks
+  -disable-experimental-feature <value>
+                          Disable an experimental feature
+  -disable-incremental-imports
+                          Disable cross-module incremental build metadata and driver scheduling for Swift modules
+  -disable-only-one-dependency-file
+                          Disables incremental build optimization that only produces one dependencies file
+  -disable-sandbox        Disable using the sandbox when executing subprocesses
+  -disable-upcoming-feature <value>
+                          Disable a feature that will be introduced in an upcoming language version
+  -disallow-use-new-driver
+                          Disable using new swift-driver
+  -dwarf-version=<version>
+                          DWARF debug info version to produce if requested
+  -D <value>              Marks a conditional compilation flag as true
+  -embed-tbd-for-module <value>
+                          Embed symbols from the module in the emitted tbd file
+  -emit-module-dependencies-path <path>
+                          Emit a discovered dependencies file for the emit-module task to <path>
+  -emit-module-serialize-diagnostics-path <path>
+                          Emit a serialized diagnostics file for the emit-module task to <path>
+  -enable-actor-data-race-checks
+                          Emit runtime checks for actor data races
+  -enable-autolinking-runtime-compatibility-bytecode-layouts
+                          Enable autolinking for the bytecode layouts runtime compatibility library
+  -enable-bare-slash-regex
+                          Enable the use of forward slash regular-expression literal syntax
+  -enable-builtin-module  Enables the explicit import of the Builtin module
+  -enable-deterministic-check
+                          Check compiler output determinism by running it twice
+  -enable-experimental-additive-arithmetic-derivation
+                          Enable experimental 'AdditiveArithmetic' derived conformances
+  -enable-experimental-concise-pound-file
+                          Enable experimental concise '#file' identifier
+  -enable-experimental-feature <value>
+                          Enable an experimental feature
+  -enable-experimental-forward-mode-differentiation
+                          Enable experimental forward mode differentiation
+  -enable-incremental-imports
+                          Enable cross-module incremental build metadata and driver scheduling for Swift modules
+  -enable-library-evolution
+                          Build the module to allow binary-compatible library evolution
+  -enable-only-one-dependency-file
+                          Enables incremental build optimization that only produces one dependencies file
+  -enable-upcoming-feature <value>
+                          Enable a feature that will be introduced in an upcoming language version
+  -enforce-exclusivity=<enforcement>
+                          Enforce law of exclusivity
+  -experimental-allow-non-resilient-access
+                          Deprecated; use -allow-non-resilient-access instead
+  -experimental-package-bypass-resilience
+                          Deprecated; has no effect
+  -experimental-package-cmo-abort-on-deserialization-fail
+                          Abort if a deserialization error is found while package optimization is enabled
+  -experimental-package-cmo
+                          Deprecated; use -package-cmo instead
+  -explain-module-dependency-detailed <value>
+                          Emit remarks describing every possible dependency path that explains why compilation may depend on a module with a given name.
+  -explain-module-dependency <value>
+                          Emit remark describing why compilation may depend on a module with a given name.
+  -explicit-auto-linking  Instead of linker-load directives, have the driver specify all link dependencies on the linker invocation. Requires '-explicit-module-build'.
+  -export-as <value>      Module name to use when referenced in clients module interfaces
+  -external-plugin-path <path>#<plugin-server-path>
+                          Add directory to the plugin search path with a plugin server executable
+  -e <value>              Executes a line of code provided on the command line
+  -file-compilation-dir <path>
+                          The compilation directory to embed in the debug info. Coverage mapping is not supported yet.
+  -file-prefix-map <prefix=replacement>
+                          Remap source paths in debug, coverage, and index info
+  -framework <value>      Specifies a framework which should be linked against
+  -Fsystem <value>        Add directory to system framework search path
+  -F <value>              Add directory to framework search path
+  -gdwarf-types           Emit full DWARF type info.
+  -gline-tables-only      Emit minimal debug info for backtraces only
+  -gnone                  Don't emit debug info
+  -g                      Emit debug info. This is the preferred setting for debugging with LLDB.
+  -help                   Display available options
+  -in-process-plugin-server-path <value>
+                          Path to dynamic library plugin server
+  -index-ignore-clang-modules
+                          Avoid indexing clang modules (pcms)
+  -index-include-locals   Include local definitions/references in the produced index data.
+  -index-store-path <path>
+                          Store indexing data to <path>
+  -index-unit-output-path <path>
+                          Use <path> as the output path in the produced index data.
+  -Isystem <value>        Add directory to the system import search path
+  -I <value>              Add directory to the import search path
+  -j <n>                  Number of commands to execute in parallel
+  -libc <value>           libc runtime library to use
+  -link-objc-runtime      Deprecated
+  -load-pass-plugin=<path>
+                          Load LLVM pass plugin from a dynamic shared object file.
+  -load-plugin-executable <path>#<module-names>
+                          Path to a compiler plugin executable and a comma-separated list of module names where the macro types are declared
+  -load-plugin-library <path>
+                          Path to a dynamic library containing compiler plugins such as macros
+  -load-resolved-plugin <library-path>#<executable-path>#<module-names>
+                          Path to resolved plugin configuration and a comma-separated list of module names where the macro types are declared. Library path and exectuable path can be empty if not used
+  -locale <locale-code>   Choose a language for diagnostic messages
+  -localization-path <path>
+                          Path to localized diagnostic messages directory
+  -L <value>              Add directory to library link search path
+  -l <value>              Specifies a library which should be linked against
+  -module-abi-name <value>
+                          ABI name to use for the contents of this module
+  -module-alias <alias_name=real_name>
+                          If a source file imports or references module <alias_name>, the <real_name> is used for the contents of the file
+  -module-cache-path <value>
+                          Specifies the module cache path
+  -module-link-name <value>
+                          Library to link against when using this module
+  -module-name <value>    Name of the module to build
+  -no-color-diagnostics   Do not print diagnostics in color
+  -no-warnings-as-errors  Treat warnings as warnings
+  -nostdimport            Don't search the standard library or toolchain import paths for modules
+  -nostdlibimport         Don't search the standard library import path for modules
+  -num-threads <n>        Enable multi-threading and specify number of threads
+  -Onone                  Compile without any optimization
+  -Osize                  Compile with optimizations and target small code size
+  -Ounchecked             Compile with optimizations and remove runtime safety checks
+  -O                      Compile with optimizations
+  -package-cmo            Enable optimization to perform defalut CMO within a package boundary
+  -package-name <value>   Name of the package the module belongs to
+  -plugin-path <value>    Add directory to the plugin search path
+  -prefix-serialized-debugging-options
+                          Apply debug prefix mappings to serialized debug info in Swiftmodule files
+  -pretty-print           Pretty-print the output JSON
+  -print-educational-notes
+                          Include educational notes in printed diagnostic output, if available
+  -print-supported-features
+                          Print information about features supported by the compiler
+  -print-target-info      Print target information for the given target <triple>, such as x86_64-apple-macos10.9
+  -project-name <value>   Name of the project this module to build belongs to
+  -public-module-name <value>
+                          Public facing module name to use in diagnostics and documentation
+  -Rcache-compile-job     Show remarks for compiler caching
+  -Rcross-import          Emit a remark if a cross-import of a module is triggered.
+  -remove-runtime-asserts Remove runtime safety checks.
+  -Rindexing-system-module
+                          Emit a remark when indexing a system module
+  -Rmacro-loading         Emit remarks about loaded macro implementations
+  -Rmodule-api-import     Emit remarks about the import bridging in each element composing the API
+  -Rmodule-loading        Emit remarks about loaded module
+  -Rmodule-recovery       Emit remarks about contextual inconsistencies in loaded modules
+  -Rmodule-serialization  Emit remarks about module serialization
+  -Rpass-missed=<value>   Report missed transformations by optimization passes whose name matches the given POSIX regular expression
+  -Rpass=<value>          Report performed transformations by optimization passes whose name matches the given POSIX regular expression
+  -Rskip-explicit-interface-build
+                          Emit a remark if an explicit module interface invocation has an early exit because the expected output is up-to-date
+  -runtime-compatibility-version <value>
+                          Link compatibility library for Swift runtime version, or 'none'
+  -save-optimization-record-passes <regex>
+                          Only include passes which match a specified regular expression in the generated optimization record (by default, include all passes)
+  -save-optimization-record-path <value>
+                          Specify the file name of any generated optimization record
+  -save-optimization-record=<format>
+                          Generate an optimization record file in a specific format (default: YAML)
+  -save-optimization-record
+                          Generate a YAML optimization record file
+  -scanner-prefix-map-sdk <path>
+                          Remap paths within SDK reported by dependency scanner
+  -scanner-prefix-map-toolchain <path>
+                          Remap paths within toolchain directory reported by dependency scanner
+  -scanner-prefix-map <prefix=replacement>
+                          Remap paths reported by dependency scanner
+  -sdk-module-cache-path <value>
+                          Specifies the module cache path for explicitly-built SDK modules
+  -sdk <sdk>              Compile against <sdk>
+  -serialize-diagnostics-path <path>
+                          Emit a serialized diagnostics file to <path>
+  -static-executable      Statically link the executable
+  -static-stdlib          Statically link the Swift standard library
+  -strict-concurrency=<value>
+                          Specify the how strict concurrency checking will be. The value may be 'minimal' (most 'Sendable' checking is disabled), 'targeted' ('Sendable' checking is enabled in code that uses the concurrency model, or 'complete' ('Sendable' and other checking is enabled for all code in the module)
+  -strict-memory-safety:migrate
+                          Enable migration to strict memory safety checking
+  -strict-memory-safety   Enable strict memory safety checking
+  -suppress-remarks       Suppress all remarks
+  -suppress-warnings      Suppress all warnings
+  -swift-ptrauth-mode <mode>
+                          Mode for staging pointer authentication. Supported modes are LegacyAndStrip, NewAndStrip and NewAndAuth.
+  -swift-version <vers>   Interpret input according to a specific Swift language version number
+  -sysroot <sysroot>      Native Platform sysroot
+  -target-cpu <value>     Generate code for a particular CPU variant
+  -target-min-inlining-version <value>
+                          Require inlinable code with no '@available' attribute to back-deploy to this version of the '-target' OS
+  -target-variant <value> Generate 'zippered' code for macCatalyst that can run on the specified variant target triple in addition to the main -target triple
+  -target <triple>        Generate code for the given target <triple>, such as x86_64-apple-macos10.9
+  -use-ld=<value>         Specifies the flavor of the linker to be used
+  -user-module-version <vers>
+                          Module version specified from Swift module authors
+  -validate-clang-modules-once
+                          Don't verify input files for Clang modules if the module has been successfully validated or loaded during this build session
+  -version                Print version information and exit
+  -vfsoverlay <value>     Add directory to VFS overlay file
+  -visualc-tools-root <root>
+                          VisualC++ Tools Root
+  -visualc-tools-version <version>
+                          VisualC++ ToolSet Version
+  -v                      Show commands to run and use verbose output
+  -warn-concurrency       Warn about code that is unsafe according to the Swift Concurrency model and will become ill-formed in a future language version
+  -warn-implicit-overrides
+                          Warn about implicit overrides of protocol members
+  -warnings-as-errors     Treat warnings as errors
+  -windows-sdk-root <root>
+                          Windows SDK Root
+  -windows-sdk-version <version>
+                          Windows SDK Version
+  -working-directory <path>
+                          Resolve file paths relative to the specified directory
+  -Xcc <arg>              Pass <arg> to the C/C++/Objective-C compiler
+  -Xlinker <value>        Specifies an option which should be passed to the linker
+
+[1;38;5;196mWelcome to Swift![0m
+
+[1mSubcommands:[0m
+
+  [1mswift build[0m      Build Swift packages
+  [1mswift package[0m    Create and work on packages
+  [1mswift run[0m        Run a program from a package
+  [1mswift test[0m       Run package tests
+  [1mswift repl[0m       Experiment with Swift code interactively
+
+  Use [1m`swift --version`[0m for Swift version information.
+
+  Use [1m`swift --help`[0m for descriptions of available options and flags.
+
+  Use [1m`swift help <subcommand>`[0m for more information about a subcommand.
+

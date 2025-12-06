@@ -437,6 +437,13 @@ entry:
 
 question for me: do unsafe pointer contribute to the unowned reference count
 
+poking around a bit in `tests/unsafe_refcount` shows that unsafe unowned doesn't increment the unsafe refcount. Notable commands:
+```
+$ swift run --debugger
+(lldb) language swift refcount a!
+```
+I also learned that inspecting refcounts with lldb counts as creating a strong reference, which really messes with my ability to count references.
+
 #pagebreak()
 == Next Steps
 This section is a loose collection of "things I want to look at later."

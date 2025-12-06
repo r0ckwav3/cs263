@@ -374,19 +374,85 @@ Finally, when the weak reference count drops to 0, the side table entry is deall
     // line("attr2_b", "header_a.east", stroke: (dash: "dashed"))
   }),
   gap: 2em,
-  caption: [an object following the side table lifecycle]
+  caption: [An object following the side table lifecycle]
 )<lifecycle_example>
 
 Above, @lifecycle_example shows he progression of an object gaining a strong, unowned, then weak reference and then losing them again in that order.
 
 = Performance
-#lorem(20)
+Based on the implementation described above, we can see that there are some performance tradeoffs for using strong pointers. For example, the first weak pointer to an must allocate a second segment of heap memory, which takes significant time. To test this I wrote three benchmarks to test reference creation, deinitialization and dereference, as described in @benchmark_code.
+
+#figure(
+  grid(
+    columns: 2,
+    column-gutter: 10em,
+    row-gutter: 2em,
+    [Classes (strong ref)], [Create],
+    ```swift
+class A{}
+class B{
+    var ref: A
+    init(a: A){
+        self.ref = a
+    }
+}
+    ```,
+    ```swift
+let a = A()
+for _ in 0..<count {
+    let _ = B(a: a)
+}
+    ```,
+    [Deref], [Destroy],
+    ```swift
+let a = A()
+let b = B(a: a)
+for _ in 0..<count {
+    let _ = b.ref
+}
+    ```,
+    ```swift
+var b: B
+for _ in 0..<count {
+    let a = A()
+    b = B(a: a)
+}
+    ```,
+  ),
+  gap: 2em,
+  caption: [Benchmarking code]
+)<benchmark_code>
+
+#figure(
+  grid(
+    columns: 4,
+    gutter: 2em,
+    [Create], [Deref], [Destroy], [Destroy - Create],
+    image("figures/create.png", width: 10em), image("figures/deref.png", width: 10em),
+    image("figures/destroy.png", width: 10em), image("figures/destroy_minus_create.png", width: 10em),
+  ),
+  gap: 2em,
+  caption: [Benchmarking performance results]
+)<benchmark_results>
+
+Each benchmark was run with `B.ref` set to all four reference types, run simultaneously to control for external factors affecting performance. The results for $N = 1,000,000,000$ are described in @benchmark_results. For the "Destroy" test, I specifically wanted to test the performance of moving from the `LIVE` state through the state machine to `DEAD`. Since testing this neccisarily also involved creating a reference, I also plotted the difference of the destroy and create tests to see if the performance difference could be accounted for by the creation time involved.
+
+These times reflect what we expect from the implementation. Creating a strong, unowned, or unsafe reference reference take the same amount of time since they behave very similarly. Creating a weak pointer allocates the side table entry, so it takes significantly longer. Similary for Destroy, the strong, unowned, and unsafe cases all are moving through the `DEINITING`, `DEINITED` and `DEAD` states, albiet at different points in execution, so we expect them to all take a similar amount of time. Weak pointers must move move through the `FREED` state and also deallocate the side table, so they take more time, even when the extra creation time is factored out.
+
+The most surprising result to me personally is that the dereference time is similar across all reference types. I would expect that weak pointers would be slightly slower since they need to load the side table and then load the actual object based on the side table entry's pointer. However, what the benchmarking shows is that they are the slowest, but by a nearly undetectable amount.
 
 = Process
-#lorem(20)
+At the start of this project, I had some prior experience with Swift, but hadn't fully explored the language. I chose Swift because it was a language that was created with mobile development in mind and I wanted to see how that affected the design of the runtime.
+
+In my first week of research (week 5 of the quarter) I had a few goals: re-learn swift as a language, and find out where I could find information on the Swift runtime. I followed A Swift Tour#footnote("https://docs.swift.org/swift-book/documentation/the-swift-programming-language/guidedtour/") and started learning about the compilation pipeline. During this time I also found a very informative blog post by Jacob's Tech Tavern#footnote("https://blog.jacobstechtavern.com/p/the-swift-runtime-your-silent-partner") about how memory operations turned into runtime calls. Both the compilation pipline and the blog post referenced SIL, so for the tail end of this week I started reading the SIL documentation.
+
+I underestimated how dense the SIL documentation would be, so for the entirety of week 6, I was just learning SIL. At the start of week 7, I just the last part of the documentation I hadn't finished, and returned to the blog post. The post itself is quite short, but it references lots of different parts of the `swift` repository, so I spent rest of week 7 following those links and getting a feel for how the repo is structured. Also during this time I started looking into how swift compiled for different platforms to try and find information on mobile-specific considerations or optimizations. What I found was that platform specifications were handled via a lot of compile-time macros and therefore were quite hard to understand. In addition, the constants used to activate these macros didn't have great documentation on when they were activated, so finding exactly which code ran on IOS vs OSX was even more opaque.
+
+Week 8 was a very productive week and also the week where my focus changed to weak references. I first read the Swift's Automatic Reference Counting documentation#footnote("https://docs.swift.org/swift-book/documentation/the-swift-programming-language/automaticreferencecounting/") at the start of this week, and seriously misunderstood how the different reference types worked. After doing some of my own testing, I corrected most of my initial misunderstandings, but also started wondering about the performance implications of these references. Using what I had learned from my SIL research and the process outlined in the Jacob's Tech Tavern article, I began to trace a number of unowned reference operations. Again I ran into issues with C++ macros, specifically that certain function names were defined via macro. For example, when I looked for where `visitLoadUnownedInst` was defined, I couldn't find anything because it was defined as `visitLoad##Name##Inst` in the `NEVER_LOADABLE_CHECKED_REF_STORAGE` macro.
+
+Week 9 was a continuation of the previous weeks work, finally getting all the way down into the Swift runtime after chasing function calls for a while. All of my calls seemed to be ending in `HeapObject` calls, but my lack of experience with C++ headers got me a bit turned around as to where exactly the `HeapObject` calls were implemented.
+
+At the beginning of week 10 I wanted to have some solid results for the in-class presentation, so I switched my focus to creating the benchmarks. They were relatively straightforward, but took some time to tune and mitigate interference from other processes on my computer. After creating and giving the presentation, I returned to the source code investigation with fresh eyes and almost immediately found the relevant portion of `HeapObject.h` and `RefCount.h`. Between these two files I was able to fully construct the reference counting model presented in this report.
 
 = Future Work
 #lorem(20)
-
-= Acknowlegements
-// TODO: tech tavern here

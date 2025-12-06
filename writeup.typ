@@ -32,11 +32,16 @@
 }
 
 // TODO: make this title look good
-On the Implementation and Performance of Swift's Weak References
-Wren Vandervelde
+#align(center)[
+  #set text(weight: "bold", size: 14pt)
+  On the Implementation and Performance of Swift's Weak References \
+  #set text(weight: "bold", size: 10pt)
+  Wren Vandervelde \
+  CMPSC 263 F25
+]
 
 = Abstract
-#lorem(20)
+Swift's primary runtime, usually just called the Swift runtime, implements garbage collection via pure reference counting. This means that the garbage collector never needs to interrupt the program to either sweep or copy the memory, but it leaves the system vulnerable to strong reference cycles. Two object which reference each other will never be cleaned because they always have positive strong reference counts. To break strong reference cycles, swift introduces three other reference types which don't increment the strong reference count. Each reference type brings its own tradeoffs. Weak references require allocating and deallocating a side table entry when they are first used, unowned references may keep the object's memory alive for longer than expecte, and unsafe references can introduce use-after-free vulnerabilities into the code. The goal of my project was to learn about the API of these references, find their implementation details, and benchmark their performance on a number of common operations.
 
 = The Swift Language
 Swift is a high-level language originally developed by Apple and then open-sourced in 2015#footnote[https://www.swift.org/about/]. Swift advertises itself as a general purpose language, although one of its most notable uses is in application development for Apple's primary platforms -- iOS, macOS, watchOS, and tvOS. In contrast to its predecessor Objective-C, one of Swift's stated goals is safety, and one way that this goal is implemented practically is that Swift has automatic memory management in the form of a reference-counting garbage collector.
@@ -208,7 +213,7 @@ For example, in our linked list we typically keep a pointer to the head, so we s
 
 Once `a` and `b` are unassigned, object B will drop down to 1 reference (from object A next), but object A now has a reference count of 0 since the weak reference from object B doesn't contribute to the count. This leads to object A being deinitialized, removing the reference to object B. This in turn brings B's reference count down to 0, so both objects are correctly deinitialized and deallocated.
 
-== Implementation
+== Weak Reference Implementation
 Now that we understand how weak pointers work, we can start to understand how they're implemented. Reference counting with only strong references creates a straightforward and elegant system. Each object has one reference count stored as metadata and is deinitialized exactly when its reference count drops to zero. A reference counted runtime system with weak pointers cannot be as simple. For instance, when an unowned pointer tries to access an object with no more strong references, it needs to panic. How does it "know" that the object has been deinitialized? Presumably there's a flag somewhere, but now that's extra state that we didn't need to store previously. And now _that_ state needs to be deallocated somehow when there are no more unowned pointers.
 
 Since unowned pointers are the simpler of the two, let's start with looking at their implementation. Rather than containing a basic reference count in the object's header, each heap-allocated `HeapObject` in Swift contains a `InlineRefCounts` struct, containing a strong reference count, an unowned reference count, and the object's "state", which follows the state machine in @object_state_machine. We abbreviate strong reference count as SRC, unowned reference count as URC, and (when we add them in) weak reference count as WRC.
@@ -455,4 +460,5 @@ Week 9 was a continuation of the previous weeks work, finally getting all the wa
 At the beginning of week 10 I wanted to have some solid results for the in-class presentation, so I switched my focus to creating the benchmarks. They were relatively straightforward, but took some time to tune and mitigate interference from other processes on my computer. After creating and giving the presentation, I returned to the source code investigation with fresh eyes and almost immediately found the relevant portion of `HeapObject.h` and `RefCount.h`. Between these two files I was able to fully construct the reference counting model presented in this report.
 
 = Future Work
-#lorem(20)
+
+With more time, there are a few directions I would take this project. The first is understanding the SIL mandatory transformations related to reference counting. A few of the sources I looked at mentioned these transformations, but I didn't have time to see what exactly they changed or were optimizing for. Next is that I want to create more realistic benchmarks for these reference types. For example, implementing a doubly linked list with each reference type on back edges and measuring the performance of push/pop/search operations and profiling the memory usage at various points during the program. In general, I didn't have as many concrete results on the memory tradeoffs of each reference as I would have liked. Finally I could look into the implementations of other languages which have weak references or pointers. Both Rust and C++ have special smart pointer types which implement reference counting and in turn have weak variations. Notably, I haven't found another language which has the unowned/weak seperation, and so comparing other language's implementations may give some insight into why Swift differentiates them.

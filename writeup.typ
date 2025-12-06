@@ -159,14 +159,14 @@ As mentioned earlier, the Swift runtime manages memory via a reference counting 
   caption: [A strong reference cycle]
 )<dll_strong_cycle>
 
-The way that swift solves this is by introducing a number of "weak" pointers--as opposed to the normal "strong" pointers#footnote("https://docs.swift.org/swift-book/documentation/the-swift-programming-language/automaticreferencecounting/"). The three kinds of weak pointers in swift are weak pointers, unowned pointers, and unsafe unowned pointers, which I will refer to as simply "unowned pointers". All three of these can point to an object without increasing its reference count. What this also means is that all of these weak pointer types may end up pointing to an object whose reference count has reached 0 and therefore has been deinitialized. How the three weak pointer types handle that case is their main distinguishing feature:
-- Weak pointers must be optional types and, when the referenced object is deinitialized, are automatically set to `nil`.
-- Unowned pointers panic when a user tries to reference them after deallocation
-- Unsafe pointers don't have any checks, and may allow the user to make use-after-free errors
+The way that swift solves this is by introducing a number of "weak" references--as opposed to the normal "strong" references#footnote("https://docs.swift.org/swift-book/documentation/the-swift-programming-language/automaticreferencecounting/"). The three kinds of weak references in swift are weak references, unowned references, and unsafe unowned references, which I will refer to as simply "unowned references". All three of these can point to an object without increasing its reference count. What this also means is that all of these weak reference types may end up pointing to an object whose reference count has reached 0 and therefore has been deinitialized. How the three weak reference types handle that case is their main distinguishing feature:
+- Weak references must be optional types and, when the referenced object is deinitialized, are automatically set to `nil`.
+- Unowned references panic when a user tries to reference them after deallocation
+- Unsafe references don't have any checks, and may allow the user to make use-after-free errors
 
-Unsafe pointers, like the name suggests, violate the memory safety of swift and are therefore highly discouraged. When choosing between the other two options, swift suggests using the concept of ownership and lifetimes. If there are two (or more) objects which may cause a reference cycle, one of them should be designated as the "owner" of the other object and is typically the object with the longer lifetime -- the one which is created first and used last. If the owned object has a stictly shorter lifetime than the owner, then it should have a unowned reference, since there's no risk of panicking. On the other hand, if the owned object might live longer than the owner, weak references should be used.
+Unsafe references, like the name suggests, violate the memory safety of swift and are therefore highly discouraged. When choosing between the other two options, swift suggests using the concept of ownership and lifetimes. If there are two (or more) objects which may cause a reference cycle, one of them should be designated as the "owner" of the other object and is typically the object with the longer lifetime -- the one which is created first and used last. If the owned object has a stictly shorter lifetime than the owner, then it should have a unowned reference, since there's no risk of panicking. On the other hand, if the owned object might live longer than the owner, weak references should be used.
 
-For example, in our linked list we typically keep a pointer to the head, so we should make the `next` reference be strong. However, we may want to pop the head of the list and then keep around everything else, so the `prev` pointer should be weak. In @dll_code_weak we have the updated class definition, which leads to the references in @dll_weak_cycle.
+For example, in our linked list we typically keep a reference to the head, so we should make the `next` reference be strong. However, we may want to pop the head of the list and then keep around everything else, so the `prev` reference should be weak. In @dll_code_weak we have the updated class definition, which leads to the references in @dll_weak_cycle.
 
 #figure(
   ```swift
@@ -208,15 +208,15 @@ For example, in our linked list we typically keep a pointer to the head, so we s
     line("attr3_a", "header_b.west")
     line("attr2_b", "header_a.east", stroke: (dash: "dashed"))
   }),
-  caption: [Solving the reference cycle with weak pointers]
+  caption: [Solving the reference cycle with weak references]
 )<dll_weak_cycle>
 
 Once `a` and `b` are unassigned, object B will drop down to 1 reference (from object A next), but object A now has a reference count of 0 since the weak reference from object B doesn't contribute to the count. This leads to object A being deinitialized, removing the reference to object B. This in turn brings B's reference count down to 0, so both objects are correctly deinitialized and deallocated.
 
 == Weak Reference Implementation
-Now that we understand how weak pointers work, we can start to understand how they're implemented. Reference counting with only strong references creates a straightforward and elegant system. Each object has one reference count stored as metadata and is deinitialized exactly when its reference count drops to zero. A reference counted runtime system with weak pointers cannot be as simple. For instance, when an unowned pointer tries to access an object with no more strong references, it needs to panic. How does it "know" that the object has been deinitialized? Presumably there's a flag somewhere, but now that's extra state that we didn't need to store previously. And now _that_ state needs to be deallocated somehow when there are no more unowned pointers.
+Now that we understand how weak references work, we can start to understand how they're implemented. Reference counting with only strong references creates a straightforward and elegant system. Each object has one reference count stored as metadata and is deinitialized exactly when its reference count drops to zero. A reference counted runtime system with weak references cannot be as simple. For instance, when an unowned reference tries to access an object with no more strong references, it needs to panic. How does it "know" that the object has been deinitialized? Presumably there's a flag somewhere, but now that's extra state that we didn't need to store previously. And now _that_ state needs to be deallocated somehow when there are no more unowned references.
 
-Since unowned pointers are the simpler of the two, let's start with looking at their implementation. Rather than containing a basic reference count in the object's header, each heap-allocated `HeapObject` in Swift contains a `InlineRefCounts` struct, containing a strong reference count, an unowned reference count, and the object's "state", which follows the state machine in @object_state_machine. We abbreviate strong reference count as SRC, unowned reference count as URC, and (when we add them in) weak reference count as WRC.
+Since unowned references are the simpler of the two, let's start with looking at their implementation. Rather than containing a basic reference count in the object's header, each heap-allocated `HeapObject` in Swift contains a `InlineRefCounts` struct, containing a strong reference count, an unowned reference count, and the object's "state", which follows the state machine in @object_state_machine. We abbreviate strong reference count as SRC, unowned reference count as URC, and (when we add them in) weak reference count as WRC.
 
 #figure(
   {
@@ -266,7 +266,7 @@ Weak references solve this issue through a structure called the side table. An o
 
 Initially, objects start with no side table, and only gain one when a weak reference is created. This corresponds to the bottom path of the object life cycle shown in @object_state_machine. While very similar to the top path, there are a few key differences. First, all reference counts are moved into the side table. Next, the object gains a weak reference count. Similar to the unowned reference count, this starts out as $1+$ the real number of weak references.
 
-On the "with side table" path, when a `DEINITED` object's unowned reference count drops to 0, it moves to a new state: `FREED`. In this transition, the original object's memory is freed--leaving only the side table entry--and the weak reference count is decremented to come in line with the real number of weak references. In the `FREED` state, only weak references to the object should remain, meaning all pointers to the original object's memory location should be dropped. When a weak reference is checked, swift only need check the side table's state before returning either a `nil` value or a strong pointer.
+On the "with side table" path, when a `DEINITED` object's unowned reference count drops to 0, it moves to a new state: `FREED`. In this transition, the original object's memory is freed--leaving only the side table entry--and the weak reference count is decremented to come in line with the real number of weak references. In the `FREED` state, only weak references to the object should remain, meaning all pointers to the original object's memory location should be dropped. When a weak reference is checked, swift only need check the side table's state before returning either a `nil` value or a strong reference.
 
 Finally, when the weak reference count drops to 0, the side table entry is deallocated, and the object can move to `DEAD`.
 
@@ -385,7 +385,7 @@ Finally, when the weak reference count drops to 0, the side table entry is deall
 Above, @lifecycle_example shows he progression of an object gaining a strong, unowned, then weak reference and then losing them again in that order.
 
 = Performance
-Based on the implementation described above, we can see that there are some performance tradeoffs for using strong pointers. For example, the first weak pointer to an must allocate a second segment of heap memory, which takes significant time. To test this I wrote three benchmarks to test reference creation, deinitialization and dereference, as described in @benchmark_code.
+Based on the implementation described above, we can see that there are some performance tradeoffs for using strong references. For example, the first weak reference to an must allocate a second segment of heap memory, which takes significant time. To test this I wrote three benchmarks to test reference creation, deinitialization and dereference, as described in @benchmark_code.
 
 #figure(
   grid(
@@ -442,9 +442,9 @@ for _ in 0..<count {
 
 Each benchmark was run with `B.ref` set to all four reference types, run simultaneously to control for external factors affecting performance. The results for $N = 1,000,000,000$ are described in @benchmark_results. For the "Destroy" test, I specifically wanted to test the performance of moving from the `LIVE` state through the state machine to `DEAD`. Since testing this neccisarily also involved creating a reference, I also plotted the difference of the destroy and create tests to see if the performance difference could be accounted for by the creation time involved.
 
-These times reflect what we expect from the implementation. Creating a strong, unowned, or unsafe reference reference take the same amount of time since they behave very similarly. Creating a weak pointer allocates the side table entry, so it takes significantly longer. Similary for Destroy, the strong, unowned, and unsafe cases all are moving through the `DEINITING`, `DEINITED` and `DEAD` states, albiet at different points in execution, so we expect them to all take a similar amount of time. Weak pointers must move move through the `FREED` state and also deallocate the side table, so they take more time, even when the extra creation time is factored out.
+These times reflect what we expect from the implementation. Creating a strong, unowned, or unsafe reference reference take the same amount of time since they behave very similarly. Creating a weak reference allocates the side table entry, so it takes significantly longer. Similary for Destroy, the strong, unowned, and unsafe cases all are moving through the `DEINITING`, `DEINITED` and `DEAD` states, albiet at different points in execution, so we expect them to all take a similar amount of time. Weak references must move move through the `FREED` state and also deallocate the side table, so they take more time, even when the extra creation time is factored out.
 
-The most surprising result to me personally is that the dereference time is similar across all reference types. I would expect that weak pointers would be slightly slower since they need to load the side table and then load the actual object based on the side table entry's pointer. However, what the benchmarking shows is that they are the slowest, but by a nearly undetectable amount.
+The most surprising result to me personally is that the dereference time is similar across all reference types. I would expect that weak references would be slightly slower since they need to load the side table and then load the actual object based on the side table entry's pointer. However, what the benchmarking shows is that they are the slowest, but by a nearly undetectable amount.
 
 = Process
 At the start of this project, I had some prior experience with Swift, but hadn't fully explored the language. I chose Swift because it was a language that was created with mobile development in mind and I wanted to see how that affected the design of the runtime.

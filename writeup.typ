@@ -1,4 +1,5 @@
 #import "@preview/cetz:0.4.2"
+#import "@preview/fletcher:0.5.8" as fletcher: diagram, node, edge
 
 #set page(
   "us-letter",
@@ -208,7 +209,175 @@ For example, in our linked list we typically keep a pointer to the head, so we s
 Once `a` and `b` are unassigned, object B will drop down to 1 reference (from object A next), but object A now has a reference count of 0 since the weak reference from object B doesn't contribute to the count. This leads to object A being deinitialized, removing the reference to object B. This in turn brings B's reference count down to 0, so both objects are correctly deinitialized and deallocated.
 
 == Implementation
-Now that we understand how weak pointers work, we can start to understand how they're implemented. Reference counting with only strong references creates a straightforward and elegant system. Each object has one reference count stored as metadata and is deinitialized exactly when its reference count drops to zero. A reference counted runtime system with weak pointers cannot be as simple. For instance, when an unowned pointer tries to access an object with no more strong references, it needs to panic. How does it "know" that the object has been deinitialized? Presumably there's a flag somewhere, but now that's extra state that we didn't need to store previously. And now _that_ state needs to be deallocated somehow when there are no more
+Now that we understand how weak pointers work, we can start to understand how they're implemented. Reference counting with only strong references creates a straightforward and elegant system. Each object has one reference count stored as metadata and is deinitialized exactly when its reference count drops to zero. A reference counted runtime system with weak pointers cannot be as simple. For instance, when an unowned pointer tries to access an object with no more strong references, it needs to panic. How does it "know" that the object has been deinitialized? Presumably there's a flag somewhere, but now that's extra state that we didn't need to store previously. And now _that_ state needs to be deallocated somehow when there are no more unowned pointers.
+
+Since unowned pointers are the simpler of the two, let's start with looking at their implementation. Rather than containing a basic reference count in the object's header, each heap-allocated `HeapObject` in Swift contains a `InlineRefCounts` struct, containing a strong reference count, an unowned reference count, and the object's "state", which follows the state machine in @object_state_machine. We abbreviate strong reference count as SRC, unowned reference count as URC, and (when we add them in) weak reference count as WRC.
+
+#figure(
+  {
+    set text(8pt)
+    diagram(
+      node-stroke: 1pt,
+
+      node((0,0), `INIT`, radius: 2.5em),
+      node((0,1), `LIVE`, radius: 2.5em),
+      node((2,1), `DEINITING`, radius: 2.5em),
+      node((4,1), `DEINITED`, radius: 2.5em),
+      node((6,1), `DEAD`, radius: 2.5em),
+
+      node((0,2), `LIVE`, radius: 2.5em),
+      node((2,2), `DEINITING`, radius: 2.5em),
+      node((4,2), `DEINITED`, radius: 2.5em),
+      node((6,2), `FREED`, radius: 2.5em),
+
+      {
+        let tint(c) = (stroke: c, fill: rgb(..c.components().slice(0,3), 5%), inset: 8pt)
+    		node(text(teal, align(bottom)[with side table]), enclose: ((0,2), (6,2)), ..tint(teal))
+      },
+
+      edge((0,0), (0,1), "->", $"RCs" = 1$, label-side: left),
+     	edge((0,1), (2,1), "->", $"SRC" = 0$),
+     	edge((2,1), (4,1), "->", $"URC" - 1$),
+     	edge((4,1), (6,1), "->", $"URC" = 0$),
+
+      edge((0,1), (0,2), "->", $"WRC" != 0$, label-side: left),
+      // edge((2,1), (2,2), "->", $"WRC" != 0$, label-side: left),
+      edge((6,2), (6,1), "->", $"WRC" = 0$, label-side: left),
+
+     	edge((0,2), (2,2), "->", $"SRC" = 0$),
+     	edge((2,2), (4,2), "->", $"URC" - 1$),
+     	edge((4,2), (6,2), "->", $"URC" = 0$),
+     	edge((4,2), (6,2), "->", $"WRC" - 1$, label-side: right),
+    )
+  },
+  caption: [The object lifecycle state machine]
+)<object_state_machine>
+
+An object's normal state is `LIVE`, where all operations are valid. Once the strong reference count reaches zero, instead immediately deallocating the object, we move to the `DEINITING` and call the user-specified deinit function. During this time, attempting to dereference an unowned referece will result in an error. The auto-generated deinit function also removes all the references inside the object during this stage. Once the deinit function finishes, the object moves to the `DEINITED` state and the unowned reference count is decremented. Note that the URC starts at 1, so the unowned refrence count now accurately counts the number of unowned references. Unowned references to the object may still exist at this time, but any attempt to dereference them will result in a panic. Once the unowned reference count reaches 0 (which may be immediately if there are no unowned references to the object), the object is actually freed.
+
+Based on this implementation, we can see that unowned references have relatively similar performance overhead to strong references. Each assignment and deassignment requires updating a reference count, and then we have some extra logic when either reference count hits zero. However, unowned reference have a major issue in terms of memory. If we create some large object A and then remove all of the strong references to it but keep an unowned reference around, all the space we allocated for the object must still exist.
+
+Weak references solve this issue through a structure called the side table. An object's side table entry is allocated seperately from the main object, and contains all three reference counts (strong, weak, and unowned). The side table and main object also contain mutual pointers to each other. Unlike strong and unowned references which point directly to the object, weak references are internally pointers to the side table.
+
+Initially, objects start with no side table, and only gain one when a weak reference is created. This corresponds to the bottom path of the object life cycle shown in @object_state_machine. While very similar to the top path, there are a few key differences. First, all reference counts are moved into the side table. Next, the object gains a weak reference count. Similar to the unowned reference count, this starts out as $1+$ the real number of weak references.
+
+On the "with side table" path, when a `DEINITED` object's unowned reference count drops to 0, it moves to a new state: `FREED`. In this transition, the original object's memory is freed--leaving only the side table entry--and the weak reference count is decremented to come in line with the real number of weak references. In the `FREED` state, only weak references to the object should remain, meaning all pointers to the original object's memory location should be dropped. When a weak reference is checked, swift only need check the side table's state before returning either a `nil` value or a strong pointer.
+
+Finally, when the weak reference count drops to 0, the side table entry is deallocated, and the object can move to `DEAD`.
+
+#figure(
+  cetz.canvas(
+    length: 0.75cm, {
+    import cetz.draw: *
+
+    set-style(mark: (start: none, end: ">"))
+
+    // just strong ref
+    group({
+      let x = 0
+      let y = 0
+      rect((x,y),(x + 8,y - 1), fill: gray, padding: 0.2, name: "header")
+      content("header.center", `Heap Object`)
+      rect((x, y - 1),(x + 8, y - 3), name: "body")
+      content("body.north", `state = LIVE, SRC = 1, URC = 1`, anchor:"north", padding:(top:0.4, rest:0.2), name: "attr1")
+      content("attr1.south", `...fields`, anchor:"north", padding:0.2, name: "attr2")
+
+      content((x - 2.5, y - 1), "Strong Ref", padding: 0.2, name: "strongref")
+      line("strongref.east", (x - 0.1, y - 1))
+    })
+
+    // strong and unowned
+    group({
+      let x = 0
+      let y = -4
+      rect((x,y),(x + 8,y - 1), fill: gray, padding: 0.2, name: "header")
+      content("header.center", `Heap Object`)
+      rect((x, y - 1),(x + 8, y - 3), name: "body")
+      content("body.north", `state = LIVE, SRC = 1, URC = 2`, anchor:"north", padding:(top:0.4, rest:0.2), name: "attr1")
+      content("attr1.south", `...fields`, anchor:"north", padding:0.2, name: "attr2")
+
+      content((x - 2.5, y - 1), "Strong Ref", padding: 0.2, name: "strongref")
+      content((x - 2.5, y - 2), "Unowned Ref", padding: 0.2, name: "unownedref")
+
+      line("strongref.east", (x - 0.1, y - 1))
+      line("unownedref.east", (x - 0.1, y - 2))
+    })
+
+    // strong, unowned and weak
+    group({
+      let x = 0
+      let y = -8
+      rect((x,y),(x + 4,y - 1), fill: gray, padding: 0.2, name: "header")
+      content("header.center", `Heap Object`)
+      rect((x, y - 1),(x + 4, y - 3), name: "body")
+      content("body.north", `...fields`, anchor:"north", padding:(top:0.4, rest:0.2), name: "attr1")
+
+      rect((x+6, y),(x + 14,y - 1), fill: gray, padding: 0.2, name: "sidetable_header")
+      content("sidetable_header.center", `Side Table Entry`)
+      rect((x+6, y - 1),(x + 14, y - 3), name: "sidetable_body")
+      content("sidetable_body.north", `state = LIVE`, anchor:"north", padding:(top:0.4, rest:0.2), name: "sidetable_attr1")
+      content("sidetable_attr1.south", `SRC = 1, URC = 2, WRC = 2`, anchor:"north", padding:(top:0.4, rest:0.2), name: "sidetable_attr2")
+
+      content((x - 2.5, y - 1), "Strong Ref", padding: 0.2, name: "strongref")
+      content((x - 2.5, y - 2), "Unowned Ref", padding: 0.2, name: "unownedref")
+      content((x + 16.5, y - 1), "Weak Ref", padding: 0.2, name: "weakref")
+
+      line("strongref.east", (x - 0.1, y - 1))
+      line("unownedref.east", (x - 0.1, y - 2))
+      line("weakref.west", (x + 14.1, y - 1))
+
+      line((x + 4.2, y - 1), (x + 5.9, y - 1))
+      line((x + 5.8, y - 2), (x + 4.1, y - 2))
+    })
+
+    // unowned and weak
+    group({
+      let x = 0
+      let y = -12
+      rect((x,y),(x + 4,y - 1), fill: gray, padding: 0.2, stroke:(dash:"dashed"),name: "header")
+      content("header.center", `Heap Object`)
+      rect((x, y - 1),(x + 4, y - 3), stroke:(dash:"dashed"), name: "body")
+      content("body.north", `...fields`, anchor:"north", padding:(top:0.4, rest:0.2), name: "attr1")
+
+      rect((x+6, y),(x + 14,y - 1), fill: gray, padding: 0.2, name: "sidetable_header")
+      content("sidetable_header.center", `Side Table Entry`)
+      rect((x+6, y - 1),(x + 14, y - 3), name: "sidetable_body")
+      content("sidetable_body.north", `state = DEINITED`, anchor:"north", padding:(top:0.4, rest:0.2), name: "sidetable_attr1")
+      content("sidetable_attr1.south", `SRC = 0, URC = 1, WRC = 2`, anchor:"north", padding:(top:0.4, rest:0.2), name: "sidetable_attr2")
+
+      content((x - 2.5, y - 2), "Unowned Ref", padding: 0.2, name: "unownedref")
+      content((x + 16.5, y - 1), "Weak Ref", padding: 0.2, name: "weakref")
+
+      line("unownedref.east", (x - 0.1, y - 2))
+      line("weakref.west", (x + 14.1, y - 1))
+
+      line((x + 4.2, y - 1), (x + 5.9, y - 1))
+      line((x + 5.8, y - 2), (x + 4.1, y - 2))
+    })
+
+    // weak
+    group({
+      let x = 0
+      let y = -16
+
+      rect((x+6, y),(x + 14,y - 1), fill: gray, padding: 0.2, name: "sidetable_header")
+      content("sidetable_header.center", `Side Table Entry`)
+      rect((x+6, y - 1),(x + 14, y - 3), name: "sidetable_body")
+      content("sidetable_body.north", `state = FREED`, anchor:"north", padding:(top:0.4, rest:0.2), name: "sidetable_attr1")
+      content("sidetable_attr1.south", `SRC = 0, URC = 0, WRC = 1`, anchor:"north", padding:(top:0.4, rest:0.2), name: "sidetable_attr2")
+
+      content((x + 16.5, y - 1), "Weak Ref", padding: 0.2, name: "weakref")
+
+      line("weakref.west", (x + 14.1, y - 1))
+    })
+
+    // line("attr2_b", "header_a.east", stroke: (dash: "dashed"))
+  }),
+  gap: 2em,
+  caption: [an object following the side table lifecycle]
+)<lifecycle_example>
+
+Above, @lifecycle_example shows he progression of an object gaining a strong, unowned, then weak reference and then losing them again in that order.
 
 = Performance
 #lorem(20)
